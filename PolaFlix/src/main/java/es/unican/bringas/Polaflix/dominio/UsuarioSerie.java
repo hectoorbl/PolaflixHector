@@ -1,25 +1,74 @@
-package es.unican.dae.dominio;
+package es.unican.bringas.Polaflix.repositorio.dominio;
 
+import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
-
 
 import java.time.LocalDate;
 import java.util.*;
 
+@Entity
+@Table(
+    name = "usuario_series",
+    uniqueConstraints = @UniqueConstraint(
+        name = "uk_usuario_serie",
+        columnNames = {"usuario_id", "serie_id"}
+    )
+)
 @Getter
 @Setter
 public class UsuarioSerie implements Comparable<UsuarioSerie> {
 
-    private final Serie serie;
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    /**
+     * Lado PROPIETARIO de la relación N:1 con Usuario.
+     * UsuarioSerie tiene la FK usuario_id en su tabla.
+     * Sin cascade: Usuario se gestiona de forma independiente.
+     */
+    @ManyToOne(optional = false, fetch = FetchType.LAZY)
+    @JoinColumn(name = "usuario_id", nullable = false)
+    private Usuario usuario;
+
+    /**
+     * Lado PROPIETARIO de la relación N:1 con Serie.
+     * UsuarioSerie tiene la FK serie_id en su tabla.
+     * Sin cascade: Serie tiene ciclo de vida propio, no debe borrarse al dejar de seguirla.
+     */
+    @ManyToOne(optional = false, fetch = FetchType.LAZY)
+    @JoinColumn(name = "serie_id", nullable = false)
+    private Serie serie;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
     private EstadoSerie estado;
-    private final LinkedHashSet<CapituloVisto> capitulosVistos;
+
+    /**
+     * Colección de capítulos vistos almacenada como @ElementCollection.
+     * CapituloVisto es @Embeddable, por lo que JPA gestiona automáticamente
+     * su ciclo de vida (inserción y borrado) junto con UsuarioSerie.
+     * La tabla "capitulos_vistos" contiene una FK a usuario_series(id).
+     */
+    @ElementCollection
+    @CollectionTable(
+        name = "capitulos_vistos",
+        joinColumns = @JoinColumn(name = "usuario_serie_id")
+    )
+    @OrderBy("fechaVisualizacion ASC")
+    private Set<CapituloVisto> capitulosVistos;
+
+    // Constructor protegido requerido por JPA
+    protected UsuarioSerie() {}
 
     public UsuarioSerie(Serie serie) {
-        this.serie = Objects.requireNonNull(serie, "La serie no puede ser nula");
-        this.estado = EstadoSerie.PENDIENTE;
+        this.serie           = Objects.requireNonNull(serie, "La serie no puede ser nula");
+        this.estado          = EstadoSerie.PENDIENTE;
         this.capitulosVistos = new LinkedHashSet<>();
     }
+
+    // ── Métodos de negocio ────────────────────────────────────────────────────
 
     public void marcarCapituloVisto(Capitulo capitulo, LocalDate fecha) {
         Objects.requireNonNull(capitulo, "El capítulo no puede ser nulo");
@@ -55,6 +104,8 @@ public class UsuarioSerie implements Comparable<UsuarioSerie> {
     public boolean estaVisto(Capitulo capitulo) {
         return capitulosVistos.contains(new CapituloVisto(capitulo, LocalDate.MIN));
     }
+
+    // ── Object overrides ──────────────────────────────────────────────────────
 
     @Override
     public boolean equals(Object o) {

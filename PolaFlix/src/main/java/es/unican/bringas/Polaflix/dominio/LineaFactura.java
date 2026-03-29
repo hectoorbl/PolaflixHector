@@ -1,19 +1,47 @@
 package es.unican.dae.dominio;
 
+import jakarta.persistence.*;
 import lombok.Getter;
-import lombok.Setter;
 
 import java.time.LocalDate;
 import java.util.Objects;
 
+/**
+ * LineaFactura es un @Embeddable: no tiene identidad propia ni ciclo de vida
+ * independiente. Vive dentro del @ElementCollection de Factura y se
+ * almacena en la tabla "lineas_factura".
+ *
+ * Las referencias a Serie y Capitulo se mapean como @ManyToOne dentro
+ * del embeddable (soportado por Hibernate).
+ */
+@Embeddable
 @Getter
-@Setter
 public class LineaFactura implements Comparable<LineaFactura> {
 
-    private final Serie     serie;
-    private final Capitulo  capitulo;
-    private final LocalDate fechaVisualizacion;
-    private final double    cargo;
+    /**
+     * Referencia a la serie visualizada.
+     * Sin cascade: Serie tiene ciclo de vida propio.
+     */
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "serie_id", nullable = false)
+    private Serie serie;
+
+    /**
+     * Referencia al capítulo visualizado.
+     * Sin cascade: Capitulo tiene ciclo de vida propio gestionado por Serie.
+     */
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "capitulo_id", nullable = false)
+    private Capitulo capitulo;
+
+    @Column(name = "fecha_visualizacion", nullable = false)
+    private LocalDate fechaVisualizacion;
+
+    @Column(nullable = false)
+    private double cargo;
+
+    // Constructor protegido requerido por JPA/Hibernate para @Embeddable
+    protected LineaFactura() {}
 
     public LineaFactura(Serie serie, Capitulo capitulo, LocalDate fechaVisualizacion) {
         this.serie              = Objects.requireNonNull(serie,              "La serie no puede ser nula");
@@ -26,6 +54,8 @@ public class LineaFactura implements Comparable<LineaFactura> {
         Objects.requireNonNull(categoria, "La categoría no puede ser nula");
         return categoria.getCoste();
     }
+
+    // ── Object overrides ──────────────────────────────────────────────────────
 
     @Override
     public boolean equals(Object o) {
