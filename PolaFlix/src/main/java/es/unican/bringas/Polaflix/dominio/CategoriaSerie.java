@@ -1,15 +1,14 @@
-package es.unican.dae.dominio;
+package es.unican.bringas.Polaflix.dominio;
 
-import lombok.Getter;
-import lombok.RequiredArgsConstructor;
-
-@Getter
-@RequiredArgsConstructor
 public enum CategoriaSerie {
 
-    ESTANDAR(0.5),
-    SILVER(0.75),
-    GOLD(1.5);
+    ESTANDAR(0.50), SILVER(0.75), GOLD(1.50);
 
-    private final double coste;
+    private final double costePorCapitulo;
+
+    CategoriaSerie(double costePorCapitulo) {
+        this.costePorCapitulo = costePorCapitulo;
+    }
+
+    public double getCoste() { return costePorCapitulo; }
 }

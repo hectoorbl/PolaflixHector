@@ -1,126 +1,63 @@
-package es.unican.dae.dominio;
+package es.unican.bringas.Polaflix.dominio;
 
-import jakarta.persistence.*;
 import lombok.Getter;
+import lombok.NonNull;
 import lombok.Setter;
 
-import java.util.*;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.TreeMap;
+import java.util.TreeSet;
 
-@Entity
-@Table(name = "series")
 @Getter
-@Setter
 public class Serie implements Comparable<Serie> {
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    private final String titulo;
 
-    @Column(nullable = false, unique = true)
-    private String titulo;
+    @Setter private String sinopsis;
+    @Setter private CategoriaSerie categoria;
 
-    @Column(length = 2000)
-    private String sinopsis;
+    private final TreeMap<Integer, Temporada> temporadas = new TreeMap<>();
+    private final TreeSet<Persona>            actores    = new TreeSet<>();
+    private final TreeSet<Persona>            creadores  = new TreeSet<>();
 
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
-    private CategoriaSerie categoria;
-
-    @ElementCollection
-    @CollectionTable(name = "serie_creadores", joinColumns = @JoinColumn(name = "serie_id"))
-    @Column(name = "creador", nullable = false)
-    private List<String> creadores;
-
-    @ElementCollection
-    @CollectionTable(name = "serie_actores", joinColumns = @JoinColumn(name = "serie_id"))
-    @Column(name = "actor", nullable = false)
-    private List<String> actoresPrincipales;
-
-    /**
-     * Relación bidireccional 1:N con Capitulo.
-     * Serie es el lado inverso (mappedBy); Capitulo tiene la FK serie_id.
-     * cascade = ALL + orphanRemoval: los capítulos no tienen sentido sin su serie.
-     */
-    @OneToMany(mappedBy = "serie", cascade = CascadeType.ALL, orphanRemoval = true)
-    private Set<Capitulo> capitulos;
-
-    // Constructor protegido requerido por JPA
-    protected Serie() {}
-
-    public Serie(String titulo, String sinopsis, CategoriaSerie categoria) {
-        if (titulo == null || titulo.isBlank()) throw new IllegalArgumentException("El título no puede estar vacío");
-        Objects.requireNonNull(categoria, "La categoría no puede ser nula");
-        this.titulo             = titulo;
-        this.sinopsis           = sinopsis == null ? "" : sinopsis;
-        this.categoria          = categoria;
-        this.creadores          = new ArrayList<>();
-        this.actoresPrincipales = new ArrayList<>();
-        this.capitulos          = new HashSet<>();
+    public Serie(@NonNull String titulo, @NonNull String sinopsis, @NonNull CategoriaSerie categoria) {
+        this.titulo    = titulo;
+        this.sinopsis  = sinopsis;
+        this.categoria = categoria;
     }
 
-    // ── Métodos de negocio ────────────────────────────────────────────────────
-
-    public void addCapitulo(Capitulo capitulo) {
-        Objects.requireNonNull(capitulo, "El capítulo no puede ser nulo");
-        boolean added = capitulos.add(capitulo);
-        if (!added) {
-            throw new IllegalArgumentException(
-                "Ya existe el capítulo " + capitulo.getNumero() + " en la temporada " + capitulo.getTemporada());
-        }
-        capitulo.setSerie(this);
+    public void addTemporada(@NonNull Temporada temporada) {
+        if (temporadas.containsKey(temporada.getNumero()))
+            throw new IllegalArgumentException("Temporada " + temporada.getNumero() + " ya existe");
+        temporadas.put(temporada.getNumero(), temporada);
     }
 
-    public List<Capitulo> getCapitulosPorTemporada(int temporada) {
-        return capitulos.stream()
-                .filter(c -> c.getTemporada() == temporada)
-                .sorted()
-                .collect(java.util.stream.Collectors.toList());
+    public Optional<Temporada> getTemporada(int num) {
+        return Optional.ofNullable(temporadas.get(num));
     }
 
-    public List<Integer> getTemporadas() {
-        return capitulos.stream()
-                .map(Capitulo::getTemporada)
-                .distinct()
-                .sorted()
-                .collect(java.util.stream.Collectors.toList());
+    public Optional<Capitulo> getCapitulo(int nTemp, int nCap) {
+        return getTemporada(nTemp).flatMap(t -> t.getCapitulo(nCap));
     }
 
-    public Capitulo getUltimoCapitulo() {
-        return capitulos.stream()
-                .max(Comparator.naturalOrder())
-                .orElseThrow(() -> new NoSuchElementException("La serie '" + titulo + "' no tiene capítulos"));
+    public void addActor(@NonNull Persona a)   { actores.add(a); }
+    public void addCreador(@NonNull Persona c) { creadores.add(c); }
+
+    public int totalCapitulos() {
+        return temporadas.values().stream().mapToInt(Temporada::numCapitulos).sum();
     }
-
-    public Optional<Capitulo> getCapitulo(int temporada, int numero) {
-        return capitulos.stream()
-                .filter(c -> c.getTemporada() == temporada && c.getNumero() == numero)
-                .findFirst();
-    }
-
-    public void addCreador(String creador) { if (creador != null && !creador.isBlank()) creadores.add(creador); }
-    public void addActor(String actor)     { if (actor   != null && !actor.isBlank())   actoresPrincipales.add(actor); }
-
-    // ── Object overrides ──────────────────────────────────────────────────────
 
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (!(o instanceof Serie s)) return false;
-        return titulo.equalsIgnoreCase(s.titulo);
+        return titulo.equals(s.titulo);
     }
 
     @Override
-    public int hashCode() {
-        return titulo.toLowerCase().hashCode();
-    }
+    public int hashCode() { return Objects.hash(titulo); }
 
     @Override
-    public int compareTo(Serie other) {
-        return this.titulo.compareToIgnoreCase(other.titulo);
-    }
-
-    @Override
-    public String toString() {
-        return String.format("Serie{titulo='%s', categoria=%s}", titulo, categoria);
-    }
+    public int compareTo(Serie o) { return this.titulo.compareToIgnoreCase(o.titulo); }
 }

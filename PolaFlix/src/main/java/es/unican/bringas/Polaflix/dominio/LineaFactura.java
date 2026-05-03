@@ -1,85 +1,62 @@
-package es.unican.dae.dominio;
+package es.unican.bringas.Polaflix.dominio;
 
-import jakarta.persistence.*;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.NonNull;
 
 import java.time.LocalDate;
 import java.util.Objects;
 
-/**
- * LineaFactura es un @Embeddable: no tiene identidad propia ni ciclo de vida
- * independiente. Vive dentro del @ElementCollection de Factura y se
- * almacena en la tabla "lineas_factura".
- *
- * Las referencias a Serie y Capitulo se mapean como @ManyToOne dentro
- * del embeddable (soportado por Hibernate).
- */
-@Embeddable
 @Getter
+@NoArgsConstructor
 public class LineaFactura implements Comparable<LineaFactura> {
 
-    /**
-     * Referencia a la serie visualizada.
-     * Sin cascade: Serie tiene ciclo de vida propio.
-     */
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "serie_id", nullable = false)
-    private Serie serie;
-
-    /**
-     * Referencia al capítulo visualizado.
-     * Sin cascade: Capitulo tiene ciclo de vida propio gestionado por Serie.
-     */
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "capitulo_id", nullable = false)
-    private Capitulo capitulo;
-
-    @Column(name = "fecha_visualizacion", nullable = false)
     private LocalDate fechaVisualizacion;
+    private double    cargo;
+    private String    tituloSerie;
+    private int       numeroTemporada;
+    private int       numeroCapitulo;
+    private String    tituloCapitulo;
 
-    @Column(nullable = false)
-    private double cargo;
-
-    // Constructor protegido requerido por JPA/Hibernate para @Embeddable
-    protected LineaFactura() {}
-
-    public LineaFactura(Serie serie, Capitulo capitulo, LocalDate fechaVisualizacion) {
-        this.serie              = Objects.requireNonNull(serie,              "La serie no puede ser nula");
-        this.capitulo           = Objects.requireNonNull(capitulo,           "El capítulo no puede ser nulo");
-        this.fechaVisualizacion = Objects.requireNonNull(fechaVisualizacion, "La fecha no puede ser nula");
-        this.cargo              = calcularCargo(serie.getCategoria());
+    private LineaFactura(@NonNull LocalDate fechaVisualizacion, double cargo,
+                         @NonNull String tituloSerie, int numeroTemporada,
+                         int numeroCapitulo, @NonNull String tituloCapitulo) {
+        assert cargo >= 0 : "cargo >= 0";
+        this.fechaVisualizacion = fechaVisualizacion;
+        this.cargo              = cargo;
+        this.tituloSerie        = tituloSerie;
+        this.numeroTemporada    = numeroTemporada;
+        this.numeroCapitulo     = numeroCapitulo;
+        this.tituloCapitulo     = tituloCapitulo;
     }
 
-    public double calcularCargo(CategoriaSerie categoria) {
-        Objects.requireNonNull(categoria, "La categoría no puede ser nula");
-        return categoria.getCoste();
+    public static LineaFactura crear(@NonNull LocalDate fecha, @NonNull Serie serie,
+                                     int numTemporada, @NonNull Capitulo capitulo) {
+        return new LineaFactura(fecha, serie.getCategoria().getCoste(),
+            serie.getTitulo(), numTemporada, capitulo.getNumero(), capitulo.getTitulo());
     }
-
-    // ── Object overrides ──────────────────────────────────────────────────────
 
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (!(o instanceof LineaFactura lf)) return false;
-        return Objects.equals(capitulo, lf.capitulo);
+        return numeroTemporada == lf.numeroTemporada
+                && numeroCapitulo == lf.numeroCapitulo
+                && tituloSerie.equals(lf.tituloSerie)
+                && fechaVisualizacion.equals(lf.fechaVisualizacion);
     }
 
     @Override
-    public int hashCode() {
-        return Objects.hash(capitulo);
-    }
+    public int hashCode() { return Objects.hash(tituloSerie, numeroTemporada, numeroCapitulo, fechaVisualizacion); }
 
     @Override
-    public int compareTo(LineaFactura other) {
-        int cmp = this.fechaVisualizacion.compareTo(other.fechaVisualizacion);
+    public int compareTo(LineaFactura o) {
+        int cmp = this.fechaVisualizacion.compareTo(o.fechaVisualizacion);
         if (cmp != 0) return cmp;
-        cmp = this.serie.compareTo(other.serie);
-        return cmp != 0 ? cmp : this.capitulo.compareTo(other.capitulo);
-    }
-
-    @Override
-    public String toString() {
-        return String.format("LineaFactura{serie='%s', capitulo=%s, fecha=%s, cargo=%.2f€}",
-                serie.getTitulo(), capitulo, fechaVisualizacion, cargo);
+        cmp = this.tituloSerie.compareToIgnoreCase(o.tituloSerie);
+        if (cmp != 0) return cmp;
+        cmp = Integer.compare(this.numeroTemporada, o.numeroTemporada);
+        if (cmp != 0) return cmp;
+        return Integer.compare(this.numeroCapitulo, o.numeroCapitulo);
     }
 }
