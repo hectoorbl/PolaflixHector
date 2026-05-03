@@ -1,6 +1,8 @@
 package es.unican.bringas.Polaflix.dominio;
 
+import jakarta.persistence.*;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.NonNull;
 import lombok.Setter;
 
@@ -9,22 +11,39 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.TreeSet;
 
+@Entity
+@Table(name = "usuario_series")
 @Getter
+@NoArgsConstructor
 public class UsuarioSerie implements Comparable<UsuarioSerie> {
 
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
 
-    private final Serie serie;
+    @ManyToOne(optional = false, fetch = FetchType.LAZY)
+    @JoinColumn(name = "serie_id", nullable = false)
+    private Serie serie;
 
-    @Setter private EstadoSerie estado;
+    @Setter
+    @Enumerated(EnumType.STRING)
+    private EstadoSerie estado;
 
+    // CapituloVisto es @Embeddable → tabla de colección
+    @ElementCollection
+    @CollectionTable(name = "capitulos_vistos", joinColumns = @JoinColumn(name = "usuario_serie_id"))
+    @AttributeOverrides({
+        @AttributeOverride(name = "numTemporada",       column = @Column(name = "num_temporada")),
+        @AttributeOverride(name = "numCapitulo",        column = @Column(name = "num_capitulo")),
+        @AttributeOverride(name = "fechaVisualizacion", column = @Column(name = "fecha_visualizacion"))
+    })
     private final TreeSet<CapituloVisto> capitulosVistos = new TreeSet<>();
 
     public UsuarioSerie(@NonNull Serie serie) {
-        this.serie = serie;
-        this.estado  = EstadoSerie.PENDIENTE;
+        this.serie  = serie;
+        this.estado = EstadoSerie.PENDIENTE;
     }
 
-    // El total lo inyecta la capa de aplicación tras consultar el agregado Serie por su repositorio.
     public void marcarCapituloVisto(int numTemporada, int numCapitulo,
                                     @NonNull LocalDate fecha, int totalCapitulosSerie) {
         assert numTemporada >= 1 : "numTemporada >= 1";

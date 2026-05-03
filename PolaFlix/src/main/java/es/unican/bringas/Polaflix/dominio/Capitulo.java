@@ -1,16 +1,23 @@
 package es.unican.bringas.Polaflix.dominio;
 
+import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.NonNull;
 
 import java.util.Objects;
 
+@Entity
+@Table(name = "capitulos")
 @Getter
 @NoArgsConstructor
 public class Capitulo implements Comparable<Capitulo> {
 
-    private int numero;
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    private int    numero;
     private String titulo;
     private String descripcion;
 

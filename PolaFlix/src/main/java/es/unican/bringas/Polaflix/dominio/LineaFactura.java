@@ -1,5 +1,6 @@
 package es.unican.bringas.Polaflix.dominio;
 
+import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.NonNull;
@@ -7,9 +8,15 @@ import lombok.NonNull;
 import java.time.LocalDate;
 import java.util.Objects;
 
+@Entity
+@Table(name = "lineas_factura")
 @Getter
 @NoArgsConstructor
 public class LineaFactura implements Comparable<LineaFactura> {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
 
     private LocalDate fechaVisualizacion;
     private double    cargo;

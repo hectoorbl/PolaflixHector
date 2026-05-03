@@ -1,11 +1,13 @@
 package es.unican.bringas.Polaflix.dominio;
 
+import jakarta.persistence.Embeddable;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.NonNull;
 
 import java.util.Objects;
 
+@Embeddable
 @Getter
 @NoArgsConstructor
 public class Persona implements Comparable<Persona> {

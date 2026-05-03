@@ -1,23 +1,42 @@
 package es.unican.bringas.Polaflix.dominio;
 
+import jakarta.persistence.*;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.NonNull;
 import lombok.Setter;
 
 import java.time.LocalDate;
 import java.util.*;
 
+@Entity
+@Table(name = "usuarios")
 @Getter
+@NoArgsConstructor
 public class Usuario implements Comparable<Usuario> {
 
-    private final String nombreUsuario;
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
 
-    @Setter private String     contrasena;
-    @Setter private String     cuentaBancariaIBAN;
-    @Setter private TipoTarifa tarifa;
+    @Column(unique = true, nullable = false)
+    private String nombreUsuario;
 
-    private final LinkedHashMap<String, UsuarioSerie> series   = new LinkedHashMap<>();
-    private final TreeSet<Factura>                    facturas = new TreeSet<>();
+    @Setter private String contrasena;
+    @Setter private String cuentaBancariaIBAN;
+
+    @Setter
+    @Enumerated(EnumType.STRING)
+    private TipoTarifa tarifa;
+
+    // Mapa por título de serie; UsuarioSerie tiene su propio @Entity con cascade
+    @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true)
+    @JoinColumn(name = "usuario_id")
+    @MapKey(name = "serie")
+    private final LinkedHashMap<String, UsuarioSerie> series = new LinkedHashMap<>();
+
+    @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true, mappedBy = "usuario")
+    private final TreeSet<Factura> facturas = new TreeSet<>();
 
     public Usuario(@NonNull String nombreUsuario, @NonNull String contrasena,
                    @NonNull String cuentaBancariaIBAN, @NonNull TipoTarifa tarifa) {
@@ -42,8 +61,6 @@ public class Usuario implements Comparable<Usuario> {
         series.get(serie.getTitulo()).marcarCapituloVisto(numTemporada, capitulo.getNumero(), hoy, serie.totalCapitulos());
         obtenerOCrearFacturaActual(hoy).añadirLineaFactura(hoy, serie, numTemporada, capitulo);
     }
-
-
 
     public Factura agregarFactura(int anio, int mes) {
         assert mes >= 1 && mes <= 12 : "mes en [1,12]";

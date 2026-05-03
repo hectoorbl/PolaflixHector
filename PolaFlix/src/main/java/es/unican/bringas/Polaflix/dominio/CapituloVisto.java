@@ -1,18 +1,21 @@
 package es.unican.bringas.Polaflix.dominio;
 
+import jakarta.persistence.Embeddable;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.NonNull;
 
 import java.time.LocalDate;
 import java.util.Objects;
 
-
+@Embeddable
 @Getter
+@NoArgsConstructor
 public final class CapituloVisto implements Comparable<CapituloVisto> {
 
-    private final int numTemporada;
-    private final int numCapitulo;
-    private final LocalDate fechaVisualizacion;
+    private int       numTemporada;
+    private int       numCapitulo;
+    private LocalDate fechaVisualizacion;
 
     public CapituloVisto(int numTemporada, int numCapitulo, @NonNull LocalDate fechaVisualizacion) {
         assert numTemporada >= 1 : "numTemporada >= 1";

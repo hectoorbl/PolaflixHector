@@ -1,16 +1,31 @@
 package es.unican.bringas.Polaflix.dominio;
 
+import jakarta.persistence.*;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.NonNull;
 
 import java.util.Objects;
 import java.util.Optional;
 import java.util.TreeMap;
 
+@Entity
+@Table(name = "temporadas")
 @Getter
+@NoArgsConstructor
 public class Temporada implements Comparable<Temporada> {
 
-    private final int numero;
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    private int numero;
+
+    // TreeMap no es persistible directamente; usamos una lista y reconstruimos en memoria.
+    // La clave (numero) ya está en Capitulo, así que basta un Set ordenado.
+    @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true)
+    @JoinColumn(name = "temporada_id")
+    @MapKey(name = "numero")
     private final TreeMap<Integer, Capitulo> capitulos = new TreeMap<>();
 
     public Temporada(int numero) {

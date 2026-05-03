@@ -1,6 +1,8 @@
 package es.unican.bringas.Polaflix.dominio;
 
+import jakarta.persistence.*;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.NonNull;
 import lombok.Setter;
 
@@ -9,17 +11,46 @@ import java.util.Optional;
 import java.util.TreeMap;
 import java.util.TreeSet;
 
+@Entity
+@Table(name = "series")
 @Getter
+@NoArgsConstructor
 public class Serie implements Comparable<Serie> {
 
-    private final String titulo;
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    @Column(unique = true, nullable = false)
+    private String titulo;
 
     @Setter private String sinopsis;
-    @Setter private CategoriaSerie categoria;
 
+    @Setter
+    @Enumerated(EnumType.STRING)
+    private CategoriaSerie categoria;
+
+    @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true)
+    @JoinColumn(name = "serie_id")
+    @MapKey(name = "numero")
     private final TreeMap<Integer, Temporada> temporadas = new TreeMap<>();
-    private final TreeSet<Persona>            actores    = new TreeSet<>();
-    private final TreeSet<Persona>            creadores  = new TreeSet<>();
+
+    // Persona es @Embeddable; usamos @ElementCollection con tabla de unión
+    @ElementCollection
+    @CollectionTable(name = "serie_actores", joinColumns = @JoinColumn(name = "serie_id"))
+    @AttributeOverrides({
+        @AttributeOverride(name = "nombre",   column = @Column(name = "nombre")),
+        @AttributeOverride(name = "apellido", column = @Column(name = "apellido"))
+    })
+    private final TreeSet<Persona> actores = new TreeSet<>();
+
+    @ElementCollection
+    @CollectionTable(name = "serie_creadores", joinColumns = @JoinColumn(name = "serie_id"))
+    @AttributeOverrides({
+        @AttributeOverride(name = "nombre",   column = @Column(name = "nombre")),
+        @AttributeOverride(name = "apellido", column = @Column(name = "apellido"))
+    })
+    private final TreeSet<Persona> creadores = new TreeSet<>();
 
     public Serie(@NonNull String titulo, @NonNull String sinopsis, @NonNull CategoriaSerie categoria) {
         this.titulo    = titulo;

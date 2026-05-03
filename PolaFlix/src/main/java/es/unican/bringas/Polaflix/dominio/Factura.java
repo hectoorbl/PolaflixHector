@@ -1,6 +1,8 @@
 package es.unican.bringas.Polaflix.dominio;
 
+import jakarta.persistence.*;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.NonNull;
 
 import java.time.LocalDate;
@@ -9,13 +11,25 @@ import java.util.Objects;
 import java.util.SortedSet;
 import java.util.TreeSet;
 
+@Entity
+@Table(name = "facturas")
 @Getter
+@NoArgsConstructor
 public class Factura implements Comparable<Factura> {
 
-    private final Usuario usuario;
-    private final int     mes;
-    private final int     anio;
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
 
+    @ManyToOne(optional = false, fetch = FetchType.LAZY)
+    @JoinColumn(name = "usuario_id", nullable = false)
+    private Usuario usuario;
+
+    private int mes;
+    private int anio;
+
+    @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true)
+    @JoinColumn(name = "factura_id")
     private final TreeSet<LineaFactura> lineas = new TreeSet<>();
 
     public Factura(@NonNull Usuario usuario, int mes, int anio) {
