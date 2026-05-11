@@ -11,7 +11,7 @@ import java.util.Objects;
 @Table(name = "capitulos")
 @Getter
 @NoArgsConstructor
-public class Capitulo implements Comparable<Capitulo> {
+public class Capitulo {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -22,7 +22,7 @@ public class Capitulo implements Comparable<Capitulo> {
     private String descripcion;
 
     public Capitulo(int numero, @NonNull String titulo, @NonNull String descripcion) {
-        assert numero >= 1 : "numero >= 1";
+        if (numero < 1) throw new IllegalArgumentException("numero >= 1");
         this.numero      = numero;
         this.titulo      = titulo;
         this.descripcion = descripcion;
@@ -37,7 +37,4 @@ public class Capitulo implements Comparable<Capitulo> {
 
     @Override
     public int hashCode() { return Objects.hash(numero); }
-
-    @Override
-    public int compareTo(Capitulo o) { return Integer.compare(this.numero, o.numero); }
 }

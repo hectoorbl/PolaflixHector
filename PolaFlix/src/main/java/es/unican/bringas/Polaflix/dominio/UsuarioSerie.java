@@ -7,15 +7,13 @@ import lombok.NonNull;
 import lombok.Setter;
 
 import java.time.LocalDate;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.TreeSet;
+import java.util.*;
 
 @Entity
 @Table(name = "usuario_series")
 @Getter
 @NoArgsConstructor
-public class UsuarioSerie implements Comparable<UsuarioSerie> {
+public class UsuarioSerie {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -29,7 +27,6 @@ public class UsuarioSerie implements Comparable<UsuarioSerie> {
     @Enumerated(EnumType.STRING)
     private EstadoSerie estado;
 
-    // CapituloVisto es @Embeddable → tabla de colección
     @ElementCollection
     @CollectionTable(name = "capitulos_vistos", joinColumns = @JoinColumn(name = "usuario_serie_id"))
     @AttributeOverrides({
@@ -37,7 +34,7 @@ public class UsuarioSerie implements Comparable<UsuarioSerie> {
         @AttributeOverride(name = "numCapitulo",        column = @Column(name = "num_capitulo")),
         @AttributeOverride(name = "fechaVisualizacion", column = @Column(name = "fecha_visualizacion"))
     })
-    private final TreeSet<CapituloVisto> capitulosVistos = new TreeSet<>();
+    private SortedSet<CapituloVisto> capitulosVistos = new TreeSet<>();
 
     public UsuarioSerie(@NonNull Serie serie) {
         this.serie  = serie;
@@ -46,8 +43,8 @@ public class UsuarioSerie implements Comparable<UsuarioSerie> {
 
     public void marcarCapituloVisto(int numTemporada, int numCapitulo,
                                     @NonNull LocalDate fecha, int totalCapitulosSerie) {
-        assert numTemporada >= 1 : "numTemporada >= 1";
-        assert numCapitulo  >= 1 : "numCapitulo >= 1";
+        if (numTemporada < 1) throw new IllegalArgumentException("numTemporada >= 1");
+        if (numCapitulo  < 1) throw new IllegalArgumentException("numCapitulo >= 1");
         capitulosVistos.add(new CapituloVisto(numTemporada, numCapitulo, fecha));
         actualizarEstado(totalCapitulosSerie);
     }
@@ -74,7 +71,4 @@ public class UsuarioSerie implements Comparable<UsuarioSerie> {
 
     @Override
     public int hashCode() { return Objects.hash(serie); }
-
-    @Override
-    public int compareTo(UsuarioSerie o) { return this.serie.compareTo(o.serie); }
 }

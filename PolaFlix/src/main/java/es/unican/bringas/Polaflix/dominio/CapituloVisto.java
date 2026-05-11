@@ -18,8 +18,8 @@ public final class CapituloVisto implements Comparable<CapituloVisto> {
     private LocalDate fechaVisualizacion;
 
     public CapituloVisto(int numTemporada, int numCapitulo, @NonNull LocalDate fechaVisualizacion) {
-        assert numTemporada >= 1 : "numTemporada >= 1";
-        assert numCapitulo  >= 1 : "numCapitulo >= 1";
+        if (numTemporada < 1) throw new IllegalArgumentException("numTemporada >= 1");
+        if (numCapitulo  < 1) throw new IllegalArgumentException("numCapitulo >= 1");
         this.numTemporada       = numTemporada;
         this.numCapitulo        = numCapitulo;
         this.fechaVisualizacion = fechaVisualizacion;

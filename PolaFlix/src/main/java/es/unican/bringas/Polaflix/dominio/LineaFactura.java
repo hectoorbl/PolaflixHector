@@ -25,22 +25,14 @@ public class LineaFactura implements Comparable<LineaFactura> {
     private int       numeroCapitulo;
     private String    tituloCapitulo;
 
-    private LineaFactura(@NonNull LocalDate fechaVisualizacion, double cargo,
-                         @NonNull String tituloSerie, int numeroTemporada,
-                         int numeroCapitulo, @NonNull String tituloCapitulo) {
-        assert cargo >= 0 : "cargo >= 0";
+    public LineaFactura(@NonNull LocalDate fechaVisualizacion, @NonNull Serie serie,
+                        int numeroTemporada, @NonNull Capitulo capitulo) {
         this.fechaVisualizacion = fechaVisualizacion;
-        this.cargo              = cargo;
-        this.tituloSerie        = tituloSerie;
+        this.cargo              = serie.getCategoria().getCoste();
+        this.tituloSerie        = serie.getTitulo();
         this.numeroTemporada    = numeroTemporada;
-        this.numeroCapitulo     = numeroCapitulo;
-        this.tituloCapitulo     = tituloCapitulo;
-    }
-
-    public static LineaFactura crear(@NonNull LocalDate fecha, @NonNull Serie serie,
-                                     int numTemporada, @NonNull Capitulo capitulo) {
-        return new LineaFactura(fecha, serie.getCategoria().getCoste(),
-            serie.getTitulo(), numTemporada, capitulo.getNumero(), capitulo.getTitulo());
+        this.numeroCapitulo     = capitulo.getNumero();
+        this.tituloCapitulo     = capitulo.getTitulo();
     }
 
     @Override

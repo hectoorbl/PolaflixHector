@@ -7,13 +7,14 @@ import lombok.NonNull;
 
 import java.util.Objects;
 import java.util.Optional;
+import java.util.SortedMap;
 import java.util.TreeMap;
 
 @Entity
 @Table(name = "temporadas")
 @Getter
 @NoArgsConstructor
-public class Temporada implements Comparable<Temporada> {
+public class Temporada {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -21,15 +22,13 @@ public class Temporada implements Comparable<Temporada> {
 
     private int numero;
 
-    // TreeMap no es persistible directamente; usamos una lista y reconstruimos en memoria.
-    // La clave (numero) ya está en Capitulo, así que basta un Set ordenado.
     @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true)
     @JoinColumn(name = "temporada_id")
     @MapKey(name = "numero")
-    private final TreeMap<Integer, Capitulo> capitulos = new TreeMap<>();
+    private SortedMap<Integer, Capitulo> capitulos = new TreeMap<>();
 
     public Temporada(int numero) {
-        assert numero >= 1 : "numero >= 1";
+        if (numero < 1) throw new IllegalArgumentException("numero >= 1");
         this.numero = numero;
     }
 
@@ -54,7 +53,4 @@ public class Temporada implements Comparable<Temporada> {
 
     @Override
     public int hashCode() { return Objects.hash(numero); }
-
-    @Override
-    public int compareTo(Temporada o) { return Integer.compare(this.numero, o.numero); }
 }

@@ -6,10 +6,7 @@ import lombok.NoArgsConstructor;
 import lombok.NonNull;
 
 import java.time.LocalDate;
-import java.util.Collections;
-import java.util.Objects;
-import java.util.SortedSet;
-import java.util.TreeSet;
+import java.util.*;
 
 @Entity
 @Table(name = "facturas")
@@ -30,11 +27,11 @@ public class Factura implements Comparable<Factura> {
 
     @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true)
     @JoinColumn(name = "factura_id")
-    private final TreeSet<LineaFactura> lineas = new TreeSet<>();
+    private SortedSet<LineaFactura> lineas = new TreeSet<>();
 
     public Factura(@NonNull Usuario usuario, int mes, int anio) {
-        assert mes >= 1 && mes <= 12 : "mes en [1,12]";
-        assert anio >= 1             : "anio >= 1";
+        if (mes < 1 || mes > 12) throw new IllegalArgumentException("mes en [1,12]");
+        if (anio < 1)            throw new IllegalArgumentException("anio >= 1");
         this.usuario = usuario;
         this.mes     = mes;
         this.anio    = anio;
@@ -42,7 +39,7 @@ public class Factura implements Comparable<Factura> {
 
     public LineaFactura añadirLineaFactura(@NonNull LocalDate fecha, @NonNull Serie serie,
                                             int numTemporada, @NonNull Capitulo capitulo) {
-        LineaFactura linea = LineaFactura.crear(fecha, serie, numTemporada, capitulo);
+        LineaFactura linea = new LineaFactura(fecha, serie, numTemporada, capitulo);
         lineas.add(linea);
         return linea;
     }
@@ -54,7 +51,7 @@ public class Factura implements Comparable<Factura> {
         };
     }
 
-    public SortedSet<LineaFactura> getLineas() { return Collections.unmodifiableSortedSet(lineas); }
+    public Set<LineaFactura> getLineas() { return Collections.unmodifiableSortedSet(lineas); }
 
     @Override
     public boolean equals(Object o) {
@@ -66,6 +63,7 @@ public class Factura implements Comparable<Factura> {
     @Override
     public int hashCode() { return Objects.hash(usuario, mes, anio); }
 
+    // Orden DESC por (anio, mes): la más reciente queda primero (= first()).
     @Override
     public int compareTo(Factura o) {
         int cmp = Integer.compare(o.anio, this.anio);

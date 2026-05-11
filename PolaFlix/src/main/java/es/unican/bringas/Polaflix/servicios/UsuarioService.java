@@ -26,7 +26,6 @@ public class UsuarioService {
 
     /* -------------------- AUTH -------------------- */
 
-    /** POST /signup → 201, 409 si nombreUsuario ya existe, 400 si nombre vacío. */
     @Transactional
     public ResponseEntity<Void> signup(UsuarioDTO req) {
         if (req == null || req.getNombreUsuario() == null || req.getNombreUsuario().isBlank())
@@ -48,7 +47,6 @@ public class UsuarioService {
             .build();
     }
 
-    /** POST /login → 200 con {nombreUsuario, token}, 401 si credenciales incorrectas. */
     public ResponseEntity<UsuarioDTO> login(UsuarioDTO req) {
         if (req == null || req.getNombreUsuario() == null || req.getContrasena() == null)
             return ResponseEntity.badRequest().build();
@@ -66,10 +64,6 @@ public class UsuarioService {
 
     /* -------------------- ESPACIO PERSONAL -------------------- */
 
-    /**
-     * GET /usuarios/{u}/series → espacio personal agrupado por estado, formato API:
-     * {pendientes:[...], empezadas:[...], terminadas:[...]}.
-     */
     public ResponseEntity<EspacioPersonalDTO> espacioPersonal(String nombreUsuario) {
         Optional<Usuario> opt = usuarioRepo.findByNombreUsuarioWithSeries(nombreUsuario);
         if (opt.isEmpty()) return ResponseEntity.notFound().build();
@@ -79,7 +73,7 @@ public class UsuarioService {
         List<SerieDTO> terminadas = new ArrayList<>();
 
         for (UsuarioSerie us : opt.get().getSeries().values()) {
-            SerieDTO dto = SerieDTO.resumen(us.getSerie());     // {titulo, categoria}
+            SerieDTO dto = SerieDTO.resumen(us.getSerie());
             switch (us.getEstado()) {
                 case PENDIENTE -> pendientes.add(dto);
                 case EMPEZADA  -> empezadas.add(dto);
@@ -89,7 +83,6 @@ public class UsuarioService {
         return ResponseEntity.ok(new EspacioPersonalDTO(pendientes, empezadas, terminadas));
     }
 
-    /** POST /usuarios/{u}/series/{titulo} → 201 si nueva, 204 si ya estaba, 404 si no existen. */
     @Transactional
     public ResponseEntity<Void> agregarSerie(String nombreUsuario, String tituloSerie) {
         Optional<Usuario> uOpt = usuarioRepo.findByNombreUsuario(nombreUsuario);
@@ -101,26 +94,31 @@ public class UsuarioService {
         Usuario u = uOpt.get();
         Serie   s = sOpt.get();
 
-        if (u.getSeries().containsKey(s.getTitulo()))
+        // ⚠️ Antes: u.getSeries().containsKey(s.getTitulo()) — el mapa es Map<Serie, …>,
+        // así que pasarle un String siempre devolvía false. Ahora usamos el helper.
+        if (u.getUsuarioSerie(s).isPresent())
             return ResponseEntity.noContent().build();
 
         u.agregarSerie(s);
         return ResponseEntity.status(HttpStatus.CREATED).build();
     }
 
-    /**
-     * GET /usuarios/{u}/series/{titulo} → estado de serie en el espacio personal.
-     * Formato API: {titulo, estado, temporadas:[{numero, capitulos:[{numero, visto}]}]}.
-     */
     public ResponseEntity<SerieDTO> estadoSerie(String nombreUsuario, String tituloSerie) {
         Optional<Usuario> opt = usuarioRepo.findByNombreUsuarioWithSeriesAndCapitulosVistos(nombreUsuario);
         if (opt.isEmpty()) return ResponseEntity.notFound().build();
 
-        Usuario u = opt.get();
-        UsuarioSerie us = u.getSeries().get(tituloSerie);
-        if (us == null) return ResponseEntity.notFound().build();
+        // Necesitamos primero localizar la Serie por título para poder buscarla
+        // en el Map<Serie, UsuarioSerie> del usuario.
+        Optional<Serie> sOpt = serieService.buscarPorTitulo(tituloSerie);
+        if (sOpt.isEmpty()) return ResponseEntity.notFound().build();
+        Serie serie = sOpt.get();
 
-        Serie serie = us.getSerie();
+        Usuario u = opt.get();
+        Optional<UsuarioSerie> usOpt = u.getUsuarioSerie(serie);
+        if (usOpt.isEmpty()) return ResponseEntity.notFound().build();
+        UsuarioSerie us = usOpt.get();
+
+        // Forzar carga lazy de temporadas/capítulos dentro de la transacción.
         serie.getTemporadas().values().forEach(t -> t.getCapitulos().size());
 
         Set<Long> vistos = new HashSet<>();
@@ -130,7 +128,7 @@ public class UsuarioService {
         List<TemporadaDTO> temps = serie.getTemporadas().values().stream()
             .map(t -> {
                 List<CapituloDTO> caps = t.getCapitulos().values().stream()
-                    .map(c -> CapituloDTO.conSoloVisto(c.getNumero(),     // sólo número y visto
+                    .map(c -> CapituloDTO.conSoloVisto(c.getNumero(),
                         vistos.contains(((long) t.getNumero()) * 10_000L + c.getNumero())))
                     .toList();
                 return TemporadaDTO.conCapitulos(t.getNumero(), caps);
@@ -142,11 +140,6 @@ public class UsuarioService {
 
     /* -------------------- VISUALIZACIÓN -------------------- */
 
-    /**
-     * POST .../visualizaciones → 201 con la línea de factura generada.
-     * 404 si usuario, serie o capítulo no existen, o si la serie no está en el espacio personal.
-     * 409 si el capítulo ya estaba visto.
-     */
     @Transactional
     public ResponseEntity<LineaFacturaDTO> registrarVisualizacion(
             String nombreUsuario, String tituloSerie, int numTemporada, int numCapitulo) {
@@ -158,11 +151,13 @@ public class UsuarioService {
         Optional<Serie> sOpt = serieService.buscarPorTitulo(tituloSerie);
         if (sOpt.isEmpty()) return ResponseEntity.notFound().build();
 
-        Usuario u = uOpt.get();
+        Usuario u     = uOpt.get();
         Serie   serie = sOpt.get();
 
-        UsuarioSerie us = u.getSeries().get(serie.getTitulo());
-        if (us == null) return ResponseEntity.notFound().build();
+        // ⚠️ Antes buscaba por título contra un Map<Serie,…>. Ahora por la Serie.
+        Optional<UsuarioSerie> usOpt = u.getUsuarioSerie(serie);
+        if (usOpt.isEmpty()) return ResponseEntity.notFound().build();
+        UsuarioSerie us = usOpt.get();
 
         Optional<Capitulo> capOpt = serie.getCapitulo(numTemporada, numCapitulo);
         if (capOpt.isEmpty()) return ResponseEntity.notFound().build();
@@ -181,7 +176,6 @@ public class UsuarioService {
         return ResponseEntity.status(HttpStatus.CREATED).body(LineaFacturaDTO.de(linea));
     }
 
-    /** Para uso interno desde otros servicios. */
     public Optional<Usuario> buscarPorNombre(String nombreUsuario) {
         return usuarioRepo.findByNombreUsuario(nombreUsuario);
     }

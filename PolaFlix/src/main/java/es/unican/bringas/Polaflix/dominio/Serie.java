@@ -6,16 +6,13 @@ import lombok.NoArgsConstructor;
 import lombok.NonNull;
 import lombok.Setter;
 
-import java.util.Objects;
-import java.util.Optional;
-import java.util.TreeMap;
-import java.util.TreeSet;
+import java.util.*;
 
 @Entity
 @Table(name = "series")
 @Getter
 @NoArgsConstructor
-public class Serie implements Comparable<Serie> {
+public class Serie {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -30,19 +27,20 @@ public class Serie implements Comparable<Serie> {
     @Enumerated(EnumType.STRING)
     private CategoriaSerie categoria;
 
+    // SortedMap → Hibernate la ordena por la clave (Integer numero) automáticamente.
     @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true)
     @JoinColumn(name = "serie_id")
     @MapKey(name = "numero")
-    private final TreeMap<Integer, Temporada> temporadas = new TreeMap<>();
+    private SortedMap<Integer, Temporada> temporadas = new TreeMap<>();
 
-    // Persona es @Embeddable; usamos @ElementCollection con tabla de unión
     @ElementCollection
     @CollectionTable(name = "serie_actores", joinColumns = @JoinColumn(name = "serie_id"))
     @AttributeOverrides({
         @AttributeOverride(name = "nombre",   column = @Column(name = "nombre")),
         @AttributeOverride(name = "apellido", column = @Column(name = "apellido"))
     })
-    private final TreeSet<Persona> actores = new TreeSet<>();
+    @OrderBy("apellido ASC, nombre ASC")
+    private Set<Persona> actores = new TreeSet<>();
 
     @ElementCollection
     @CollectionTable(name = "serie_creadores", joinColumns = @JoinColumn(name = "serie_id"))
@@ -50,7 +48,8 @@ public class Serie implements Comparable<Serie> {
         @AttributeOverride(name = "nombre",   column = @Column(name = "nombre")),
         @AttributeOverride(name = "apellido", column = @Column(name = "apellido"))
     })
-    private final TreeSet<Persona> creadores = new TreeSet<>();
+    @OrderBy("apellido ASC, nombre ASC")
+    private Set<Persona> creadores = new TreeSet<>();
 
     public Serie(@NonNull String titulo, @NonNull String sinopsis, @NonNull CategoriaSerie categoria) {
         this.titulo    = titulo;
@@ -88,7 +87,4 @@ public class Serie implements Comparable<Serie> {
 
     @Override
     public int hashCode() { return Objects.hash(titulo); }
-
-    @Override
-    public int compareTo(Serie o) { return this.titulo.compareToIgnoreCase(o.titulo); }
 }
