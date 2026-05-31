@@ -41,25 +41,31 @@ public class UsuarioSerie {
         this.estado = EstadoSerie.PENDIENTE;
     }
 
-    public void marcarCapituloVisto(int numTemporada, int numCapitulo,
-                                    @NonNull LocalDate fecha, int totalCapitulosSerie) {
+    public void marcarCapituloVisto(int numTemporada, int numCapitulo, @NonNull LocalDate fecha) {
         if (numTemporada < 1) throw new IllegalArgumentException("numTemporada >= 1");
         if (numCapitulo  < 1) throw new IllegalArgumentException("numCapitulo >= 1");
         capitulosVistos.add(new CapituloVisto(numTemporada, numCapitulo, fecha));
-        actualizarEstado(totalCapitulosSerie);
+        if (serie.esUltimoCapitulo(numTemporada, numCapitulo)) {
+            estado = EstadoSerie.TERMINADA;
+        } else if (estado == EstadoSerie.PENDIENTE) {
+            estado = EstadoSerie.EMPEZADA;
+        }
     }
 
     public Optional<CapituloVisto> ultimoCapituloVisto() {
         return capitulosVistos.isEmpty() ? Optional.empty() : Optional.of(capitulosVistos.last());
     }
 
-    private void actualizarEstado(int totalCapitulos) {
-        if (capitulosVistos.isEmpty()) { estado = EstadoSerie.PENDIENTE; return; }
-        long unicosVistos = capitulosVistos.stream()
-                .map(cv -> cv.getNumTemporada() * 10_000L + cv.getNumCapitulo())
-                .distinct().count();
-        estado = (totalCapitulos > 0 && unicosVistos >= totalCapitulos)
-                ? EstadoSerie.TERMINADA : EstadoSerie.EMPEZADA;
+    public boolean haVisto(int numTemporada, int numCapitulo) {
+        return capitulosVistos.stream()
+                .anyMatch(cv -> cv.getNumTemporada() == numTemporada
+                             && cv.getNumCapitulo()  == numCapitulo);
+    }
+
+    public Optional<CapituloVisto> capituloMasAvanzadoVisto() {
+        return capitulosVistos.stream()
+                .max(Comparator.comparingInt(CapituloVisto::getNumTemporada)
+                        .thenComparingInt(CapituloVisto::getNumCapitulo));
     }
 
     @Override

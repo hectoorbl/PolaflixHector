@@ -1,24 +1,33 @@
 package es.unican.bringas.Polaflix.dominio.dto;
 
-import lombok.AllArgsConstructor;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import es.unican.bringas.Polaflix.dominio.EstadoSerie;
+import es.unican.bringas.Polaflix.dominio.Usuario;
 import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
 
 import java.util.List;
 
-/**
- * Espacio personal del usuario, agrupado por estado de cada serie tal y como
- * exige la API. Cada elemento de las listas es un {@link SerieDTO} en su forma
- * de resumen ({titulo, categoria}).
- */
 @Getter
-@Setter
-@NoArgsConstructor
-@AllArgsConstructor
 public class EspacioPersonalDTO {
 
-    private List<SerieDTO> pendientes;
-    private List<SerieDTO> empezadas;
-    private List<SerieDTO> terminadas;
+    @JsonProperty("pendientes")
+    private final List<SerieResumenDTO> pendientes;
+
+    @JsonProperty("empezadas")
+    private final List<SerieEmpezadaDTO> empezadas;
+
+    @JsonProperty("terminadas")
+    private final List<SerieResumenDTO> terminadas;
+
+    public EspacioPersonalDTO(Usuario u) {
+        this.pendientes = u.obtenerSeriesConEstado(EstadoSerie.PENDIENTE).stream()
+                .map(us -> new SerieResumenDTO(us.getSerie(), true))
+                .toList();
+        this.empezadas  = u.obtenerSeriesConEstado(EstadoSerie.EMPEZADA).stream()
+                .map(SerieEmpezadaDTO::new)
+                .toList();
+        this.terminadas = u.obtenerSeriesConEstado(EstadoSerie.TERMINADA).stream()
+                .map(us -> new SerieResumenDTO(us.getSerie(), true))
+                .toList();
+    }
 }

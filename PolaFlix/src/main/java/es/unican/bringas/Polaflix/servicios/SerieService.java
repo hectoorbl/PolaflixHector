@@ -1,67 +1,76 @@
 package es.unican.bringas.Polaflix.servicios;
 
 import es.unican.bringas.Polaflix.dominio.Serie;
-import es.unican.bringas.Polaflix.dominio.dto.SerieDTO;
+import es.unican.bringas.Polaflix.dominio.Usuario;
+import es.unican.bringas.Polaflix.dominio.dto.SerieBuscadaDTO;
+import es.unican.bringas.Polaflix.dominio.dto.SerieDetalleDTO;
+import es.unican.bringas.Polaflix.dominio.dto.SerieResumenDTO;
+import es.unican.bringas.Polaflix.excepciones.RecursoNoEncontradoException;
 import es.unican.bringas.Polaflix.repositorios.SerieRepository;
-import org.springframework.http.ResponseEntity;
+import es.unican.bringas.Polaflix.repositorios.UsuarioRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Comparator;
 import java.util.List;
-import java.util.Optional;
-
 
 @Service
 @Transactional(readOnly = true)
 public class SerieService {
 
-    private final SerieRepository serieRepo;
+    private final SerieRepository   serieRepo;
+    private final UsuarioRepository usuarioRepo;
 
-    public SerieService(SerieRepository serieRepo) { this.serieRepo = serieRepo; }
-
-    /** Catálogo. Filtros opcionales y excluyentes. 400 si llegan ambos, 404 si no hay resultados. */
-    public ResponseEntity<List<SerieDTO>> listar(String inicial, String query) {
-        if (inicial != null && query != null)
-            return ResponseEntity.badRequest().build();
-
-        List<Serie> series;
-
-        if (inicial != null && !inicial.isBlank()) {
-            series = serieRepo.findByTituloStartingWithIgnoreCaseOrderByTituloAsc(inicial.trim());
-        } else if (query != null && !query.isBlank()) {
-            String q = query.trim().toLowerCase();
-            series = serieRepo.findAll().stream()
-                .filter(s -> s.getTitulo().toLowerCase().contains(q))
-                .sorted(Comparator.comparing(Serie::getTitulo, String.CASE_INSENSITIVE_ORDER))
-                .toList();
-        } else {
-            series = serieRepo.findAll().stream()
-                .sorted(Comparator.comparing(Serie::getTitulo, String.CASE_INSENSITIVE_ORDER))
-                .toList();
-        }
-
-        if (series.isEmpty() && (inicial != null || query != null))
-            return ResponseEntity.notFound().build();
-
-        return ResponseEntity.ok(series.stream().map(SerieDTO::resumen).toList());
+    public SerieService(SerieRepository serieRepo, UsuarioRepository usuarioRepo) {
+        this.serieRepo   = serieRepo;
+        this.usuarioRepo = usuarioRepo;
     }
 
-    /** Detalle de una serie. 404 si no existe. */
-    public ResponseEntity<SerieDTO> detalle(String titulo) {
-        Optional<Serie> opt = serieRepo.findByTituloIgnoreCase(titulo);
-        if (opt.isEmpty()) return ResponseEntity.notFound().build();
+    public List<SerieResumenDTO> listarPorInicial(String nombreUsuario, String inicial) {
+        Usuario u = buscarUsuarioConSeries(nombreUsuario);
 
-        Serie serie = opt.get();
-        // Cargamos las colecciones perezosas dentro de la transacción.
-        serie.getActores().size();
-        serie.getCreadores().size();
-        serie.getTemporadas().values().forEach(t -> t.getCapitulos().size());
-        return ResponseEntity.ok(SerieDTO.detalle(serie));
+        List<Serie> series = (inicial != null && !inicial.isBlank())
+                ? serieRepo.findByTituloStartingWithIgnoreCaseOrderByTituloAsc(inicial.trim())
+                : serieRepo.findAll().stream()
+                        .sorted(Comparator.comparing(Serie::getTitulo, String.CASE_INSENSITIVE_ORDER))
+                        .toList();
+
+        return series.stream()
+                .map(s -> new SerieResumenDTO(s, u.tieneSerie(s)))
+                .toList();
     }
 
-    /** Para uso interno desde otros servicios. */
-    public Optional<Serie> buscarPorTitulo(String titulo) {
-        return serieRepo.findByTituloIgnoreCase(titulo);
+    public List<SerieBuscadaDTO> buscarPorNombre(String nombreUsuario, String nombre) {
+        Usuario u = buscarUsuarioConSeries(nombreUsuario);
+
+        Serie encontrada = serieRepo.findByTituloIgnoreCase(nombre.trim())
+                .orElseThrow(() -> new RecursoNoEncontradoException("Serie no encontrada: " + nombre));
+
+        List<Serie> lista = serieRepo.findByTituloStartingWithIgnoreCaseOrderByTituloAsc(encontrada.inicial());
+
+        return lista.stream()
+                .map(s -> new SerieBuscadaDTO(s, u.tieneSerie(s),
+                        s.getTitulo().equalsIgnoreCase(encontrada.getTitulo())))
+                .toList();
+    }
+
+    public SerieDetalleDTO obtenerDetalle(String titulo, String nombreUsuario) {
+        Serie s = serieRepo.findByTituloWithPersonas(titulo)
+                .orElseGet(() -> serieRepo.findByTituloIgnoreCase(titulo)
+                        .orElseThrow(() -> new RecursoNoEncontradoException("Serie no encontrada: " + titulo)));
+        Usuario u = buscarUsuarioConSeries(nombreUsuario);
+        s.getActores().size();
+        s.getCreadores().size();
+        return new SerieDetalleDTO(s, u.tieneSerie(s));
+    }
+
+    public Serie buscarSerie(String titulo) {
+        return serieRepo.findByTituloIgnoreCase(titulo)
+                .orElseThrow(() -> new RecursoNoEncontradoException("Serie no encontrada: " + titulo));
+    }
+
+    private Usuario buscarUsuarioConSeries(String nombreUsuario) {
+        return usuarioRepo.findByNombreUsuarioWithSeries(nombreUsuario)
+                .orElseThrow(() -> new RecursoNoEncontradoException("Usuario no encontrado: " + nombreUsuario));
     }
 }

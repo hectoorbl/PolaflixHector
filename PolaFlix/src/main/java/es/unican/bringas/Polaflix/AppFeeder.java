@@ -9,56 +9,26 @@ import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
-import java.time.LocalDate;
-import java.time.ZoneId;
-import java.util.Date;
-import java.util.List;
-
-/**
- * Carga inicial extensa para H2.
- *
- *  - 15 series cubriendo distintas iniciales del alfabeto (para probar el
- *    filtro por inicial del catálogo) y las 3 categorías.
- *  - Temporadas y capítulos con suficiente volumen para que las facturas
- *    tengan líneas variadas.
- *  - 4 usuarios: 3 con tarifa POR_CAPITULO y 1 con tarifa PLANA, cubriendo
- *    los 3 estados de UsuarioSerie y casos sin actividad.
- */
 @Component
 public class AppFeeder implements CommandLineRunner {
 
-	@Autowired
-	protected UsuarioRepository ur;
-	@Autowired
-	protected SerieRepository   sr;
-	@Autowired
-	protected FacturaRepository fr;
+	@Autowired protected UsuarioRepository ur;
+	@Autowired protected SerieRepository   sr;
+	@Autowired protected FacturaRepository fr;
 
 	@Override
 	@Transactional
 	public void run(String... args) throws Exception {
-		if (sr.count() > 0 || ur.count() > 0) {
-			System.out.println("[AppFeeder] BBDD ya contiene datos, no se carga nada.");
-			return;
-		}
+		if (sr.count() > 0 || ur.count() > 0) return;
 
 		feedSeries();
 		feedUsuarios();
 		feedVisualizaciones();
 
-		testRepositorios();
-
 		System.out.println("Application feeded");
 	}
 
-	/* ============================================================== */
-	/*  CATÁLOGO DE SERIES                                             */
-	/* ============================================================== */
-
 	private void feedSeries() {
-
 		feedBreakingBad();
 		feedBetterCallSaul();
 		feedChernobyl();
@@ -74,13 +44,7 @@ public class AppFeeder implements CommandLineRunner {
 		feedPeakyBlinders();
 		feedStrangerThings();
 		feedTheWire();
-
-		System.out.println("[AppFeeder] " + sr.count() + " series cargadas.");
 	}
-
-	/* ---------------------------------------------------------------- */
-	/*  Cada serie en su propio método para mantener el feeder legible. */
-	/* ---------------------------------------------------------------- */
 
 	private void feedBreakingBad() {
 		Serie s = new Serie("Breaking Bad",
@@ -88,11 +52,11 @@ public class AppFeeder implements CommandLineRunner {
 						+ "de metanfetamina para asegurar el futuro económico de su familia.",
 				CategoriaSerie.SILVER);
 		s.addCreador(new Persona("Vince", "Gilligan"));
-		s.addActor(new Persona("Bryan",   "Cranston"));
-		s.addActor(new Persona("Aaron",   "Paul"));
-		s.addActor(new Persona("Anna",    "Gunn"));
-		s.addActor(new Persona("Dean",    "Norris"));
-		s.addActor(new Persona("Bob",     "Odenkirk"));
+		s.addActor(new Persona("Bryan",  "Cranston"));
+		s.addActor(new Persona("Aaron",  "Paul"));
+		s.addActor(new Persona("Anna",   "Gunn"));
+		s.addActor(new Persona("Dean",   "Norris"));
+		s.addActor(new Persona("Bob",    "Odenkirk"));
 
 		Temporada t1 = new Temporada(1);
 		t1.addCapitulo(new Capitulo(1, "Pilot",
@@ -186,10 +150,10 @@ public class AppFeeder implements CommandLineRunner {
 				"Recreación dramática del desastre nuclear de Chernobyl en 1986 y "
 						+ "los esfuerzos por contenerlo.",
 				CategoriaSerie.GOLD);
-		s.addCreador(new Persona("Craig",  "Mazin"));
-		s.addActor(new Persona("Jared",    "Harris"));
-		s.addActor(new Persona("Stellan",  "Skarsgård"));
-		s.addActor(new Persona("Emily",    "Watson"));
+		s.addCreador(new Persona("Craig", "Mazin"));
+		s.addActor(new Persona("Jared",   "Harris"));
+		s.addActor(new Persona("Stellan", "Skarsgård"));
+		s.addActor(new Persona("Emily",   "Watson"));
 
 		Temporada t1 = new Temporada(1);
 		t1.addCapitulo(new Capitulo(1, "1:23:45",
@@ -201,7 +165,7 @@ public class AppFeeder implements CommandLineRunner {
 		t1.addCapitulo(new Capitulo(4, "The Happiness of All Mankind",
 				"Equipos de élite trabajan en la limpieza del tejado del reactor."));
 		t1.addCapitulo(new Capitulo(5, "Vichnaya Pamyat",
-				"El juicio revela las verdaderas causas del accidente."));
+				"El juicio final y las consecuencias del desastre."));
 		s.addTemporada(t1);
 
 		sr.save(s);
@@ -209,147 +173,109 @@ public class AppFeeder implements CommandLineRunner {
 
 	private void feedDexter() {
 		Serie s = new Serie("Dexter",
-				"Un analista forense de Miami que también es un asesino en serie con "
-						+ "un código moral propio: sólo mata a otros asesinos.",
+				"Un analista forense de la policía de Miami lleva una doble vida "
+						+ "como asesino en serie que sólo mata a criminales.",
 				CategoriaSerie.SILVER);
-		s.addCreador(new Persona("James",  "Manos Jr."));
-		s.addActor(new Persona("Michael",  "C. Hall"));
+		s.addCreador(new Persona("James",   "Manos Jr."));
+		s.addActor(new Persona("Michael",  "Hall"));
 		s.addActor(new Persona("Jennifer", "Carpenter"));
 		s.addActor(new Persona("David",    "Zayas"));
 
 		Temporada t1 = new Temporada(1);
 		t1.addCapitulo(new Capitulo(1, "Dexter",
-				"Conocemos a Dexter Morgan, analista forense y asesino en serie."));
+				"Dexter Morgan acepta un nuevo reto cuando aparece un rival inesperado."));
 		t1.addCapitulo(new Capitulo(2, "Crocodile",
-				"Dexter intenta atrapar a un asesino especialmente brutal."));
+				"Dexter investiga a su próxima víctima mientras mantiene su fachada."));
 		t1.addCapitulo(new Capitulo(3, "Popping Cherry",
-				"La investigación del Asesino del Camión Frigorífico se intensifica."));
+				"Un flashback revela cómo Harry entrenó a Dexter."));
 		t1.addCapitulo(new Capitulo(4, "Let's Give the Boy a Hand",
-				"Dexter recibe un mensaje muy personal del Camión Frigorífico."));
+				"El Ice Truck Killer deja una nueva pista escalofriante."));
 		s.addTemporada(t1);
-
-		Temporada t2 = new Temporada(2);
-		t2.addCapitulo(new Capitulo(1, "It's Alive!",
-				"Dexter intenta volver a su rutina tras los eventos del año anterior."));
-		t2.addCapitulo(new Capitulo(2, "Waiting to Exhale",
-				"Aparece evidencia del Carnicero de Bay Harbor."));
-		t2.addCapitulo(new Capitulo(3, "An Inconvenient Lie",
-				"Dexter conoce a Lila, una nueva influencia peligrosa."));
-		s.addTemporada(t2);
 
 		sr.save(s);
 	}
 
 	private void feedFriends() {
 		Serie s = new Serie("Friends",
-				"Las aventuras y desventuras de seis amigos que viven en Nueva York.",
+				"Las aventuras y desventuras de seis amigos viviendo en Nueva York.",
 				CategoriaSerie.ESTANDAR);
-		s.addCreador(new Persona("David",     "Crane"));
-		s.addCreador(new Persona("Marta",     "Kauffman"));
-		s.addActor(new Persona("Jennifer",    "Aniston"));
-		s.addActor(new Persona("Courteney",   "Cox"));
-		s.addActor(new Persona("Lisa",        "Kudrow"));
-		s.addActor(new Persona("Matt",        "LeBlanc"));
-		s.addActor(new Persona("Matthew",     "Perry"));
-		s.addActor(new Persona("David",       "Schwimmer"));
+		s.addCreador(new Persona("David",   "Crane"));
+		s.addCreador(new Persona("Marta",   "Kauffman"));
+		s.addActor(new Persona("Jennifer",  "Aniston"));
+		s.addActor(new Persona("Courteney", "Cox"));
+		s.addActor(new Persona("Lisa",      "Kudrow"));
+		s.addActor(new Persona("Matt",      "LeBlanc"));
+		s.addActor(new Persona("Matthew",   "Perry"));
+		s.addActor(new Persona("David",     "Schwimmer"));
 
 		Temporada t1 = new Temporada(1);
 		t1.addCapitulo(new Capitulo(1, "The One Where Monica Gets a Roommate",
-				"Rachel huye de su boda y Monica le ofrece quedarse en su piso."));
+				"Rachel deja a su prometido en el altar y llega a la vida del grupo."));
 		t1.addCapitulo(new Capitulo(2, "The One with the Sonogram at the End",
-				"Ross descubre que su exmujer está embarazada."));
+				"Ross descubre que su ex esposa está embarazada."));
 		t1.addCapitulo(new Capitulo(3, "The One with the Thumb",
-				"Chandler vuelve a fumar y Phoebe encuentra un pulgar en su refresco."));
+				"Monica presenta a Alan a sus amigos y todos lo adoran."));
 		t1.addCapitulo(new Capitulo(4, "The One with George Stephanopoulos",
-				"Las chicas tienen una noche de pizzas y vino."));
-		t1.addCapitulo(new Capitulo(5, "The One with the East German Laundry Detergent",
-				"Ross enseña a Rachel a lavar la ropa."));
+				"Las chicas tienen una noche de pijamas mientras los chicos van al hockey."));
 		s.addTemporada(t1);
-
-		Temporada t2 = new Temporada(2);
-		t2.addCapitulo(new Capitulo(1, "The One with Ross's New Girlfriend",
-				"Ross vuelve de China con una nueva novia, Julie."));
-		t2.addCapitulo(new Capitulo(2, "The One with the Breast Milk",
-				"Joey y Chandler descubren la leche materna."));
-		t2.addCapitulo(new Capitulo(3, "The One Where Heckles Dies",
-				"Muere el vecino del piso de abajo."));
-		s.addTemporada(t2);
 
 		sr.save(s);
 	}
 
 	private void feedJuegoDeTronos() {
 		Serie s = new Serie("Juego de Tronos",
-				"Nobles familias luchan por el control del Trono de Hierro de Poniente "
-						+ "mientras una amenaza ancestral resurge en el norte.",
+				"Varias familias nobles luchan por el control del Trono de Hierro "
+						+ "en el continente de Westeros.",
 				CategoriaSerie.GOLD);
 		s.addCreador(new Persona("David", "Benioff"));
-		s.addCreador(new Persona("D. B.", "Weiss"));
+		s.addCreador(new Persona("D.B.",  "Weiss"));
 		s.addActor(new Persona("Emilia",  "Clarke"));
 		s.addActor(new Persona("Kit",     "Harington"));
 		s.addActor(new Persona("Peter",   "Dinklage"));
 		s.addActor(new Persona("Lena",    "Headey"));
-		s.addActor(new Persona("Sean",    "Bean"));
-		s.addActor(new Persona("Maisie",  "Williams"));
 
 		Temporada t1 = new Temporada(1);
-		t1.addCapitulo(new Capitulo(1, "Se acerca el invierno",
-				"Lord Eddard Stark recibe la visita del rey Robert."));
-		t1.addCapitulo(new Capitulo(2, "El Camino Real",
-				"La familia Stark se separa para servir al rey."));
-		t1.addCapitulo(new Capitulo(3, "Lord Nieve",
-				"Jon Nieve llega al Muro y conoce a sus compañeros."));
-		t1.addCapitulo(new Capitulo(4, "Tullidos, bastardos y cosas rotas",
-				"Tyrion Lannister visita el Muro de camino a Desembarco del Rey."));
-		t1.addCapitulo(new Capitulo(5, "El lobo y el león",
-				"Catelyn captura a Tyrion bajo sospechas."));
-		t1.addCapitulo(new Capitulo(6, "Una corona de oro",
-				"Daenerys come un corazón crudo en una ceremonia dothraki."));
+		t1.addCapitulo(new Capitulo(1, "Winter Is Coming",
+				"La familia Stark descubre que el anterior Mano del Rey ha muerto en circunstancias sospechosas."));
+		t1.addCapitulo(new Capitulo(2, "The Kingsroad",
+				"Ned Stark acepta ser la nueva Mano del Rey y viaja a Desembarco del Rey."));
+		t1.addCapitulo(new Capitulo(3, "Lord Snow",
+				"Jon Snow llega al Muro y comienza su entrenamiento."));
+		t1.addCapitulo(new Capitulo(4, "Cripples, Bastards and Broken Things",
+				"Tyrion visita el Muro y Ned investiga la muerte de Jon Arryn."));
+		t1.addCapitulo(new Capitulo(5, "The Wolf and the Lion",
+				"Un torneo es interrumpido por violencia en Desembarco del Rey."));
 		s.addTemporada(t1);
 
 		Temporada t2 = new Temporada(2);
-		t2.addCapitulo(new Capitulo(1, "El Norte recuerda",
-				"La guerra de los Cinco Reyes comienza."));
-		t2.addCapitulo(new Capitulo(2, "Las tierras de la noche",
-				"Daenerys busca refugio para sus dragones recién nacidos."));
-		t2.addCapitulo(new Capitulo(3, "Lo que está muerto no puede morir",
-				"Theon vuelve con su familia en las Islas del Hierro."));
-		t2.addCapitulo(new Capitulo(4, "Jardín de huesos",
-				"Joffrey muestra su crueldad en la corte."));
+		t2.addCapitulo(new Capitulo(1, "The North Remembers",
+				"Los cinco reyes preparan sus movimientos en la guerra."));
+		t2.addCapitulo(new Capitulo(2, "The Night Lands",
+				"Theon Greyjoy regresa a las Islas del Hierro."));
+		t2.addCapitulo(new Capitulo(3, "What Is Dead May Never Die",
+				"Theon decide con cuál de sus padres se quedará."));
 		s.addTemporada(t2);
-
-		Temporada t3 = new Temporada(3);
-		t3.addCapitulo(new Capitulo(1, "Valar Dohaeris",
-				"Jon es presentado a Mance Rayder, el Rey-más-allá-del-Muro."));
-		t3.addCapitulo(new Capitulo(2, "Alas Negras, Palabras Negras",
-				"Robb recibe noticias dolorosas sobre Invernalia."));
-		t3.addCapitulo(new Capitulo(3, "Camino de Tormentas",
-				"Jaime y Brienne continúan su camino hacia Desembarco del Rey."));
-		s.addTemporada(t3);
 
 		sr.save(s);
 	}
 
 	private void feedHouse() {
 		Serie s = new Serie("House",
-				"Un médico genio pero antisocial diagnostica casos imposibles "
-						+ "junto a su equipo en el Princeton-Plainsboro Teaching Hospital.",
-				CategoriaSerie.SILVER);
-		s.addCreador(new Persona("David",   "Shore"));
-		s.addActor(new Persona("Hugh",      "Laurie"));
-		s.addActor(new Persona("Lisa",      "Edelstein"));
-		s.addActor(new Persona("Robert",    "Sean Leonard"));
-		s.addActor(new Persona("Omar",      "Epps"));
+				"Un excéntrico y brillante médico diagnostica enfermedades raras "
+						+ "con métodos poco convencionales.",
+				CategoriaSerie.ESTANDAR);
+		s.addCreador(new Persona("David", "Shore"));
+		s.addActor(new Persona("Hugh",    "Laurie"));
+		s.addActor(new Persona("Omar",    "Epps"));
+		s.addActor(new Persona("Lisa",    "Edelstein"));
 
 		Temporada t1 = new Temporada(1);
 		t1.addCapitulo(new Capitulo(1, "Pilot",
-				"House intenta diagnosticar a una maestra de jardín de infancia."));
+				"House trata a una maestra con síntomas neurológicos inexplicables."));
 		t1.addCapitulo(new Capitulo(2, "Paternity",
-				"House investiga el caso de un adolescente con visión doble."));
+				"Un joven atleta con tics nerviosos desafía el diagnóstico de House."));
 		t1.addCapitulo(new Capitulo(3, "Occam's Razor",
-				"Un joven sano colapsa repentinamente en circunstancias misteriosas."));
-		t1.addCapitulo(new Capitulo(4, "Maternity",
-				"Una epidemia desconocida afecta a recién nacidos."));
+				"House cuestiona la navaja de Occam para resolver un caso complejo."));
 		s.addTemporada(t1);
 
 		sr.save(s);
@@ -357,37 +283,37 @@ public class AppFeeder implements CommandLineRunner {
 
 	private void feedLost() {
 		Serie s = new Serie("Lost",
-				"Los supervivientes de un accidente aéreo descubren que la isla en la "
-						+ "que han caído es mucho más misteriosa de lo que parece.",
-				CategoriaSerie.SILVER);
-		s.addCreador(new Persona("J. J.",    "Abrams"));
-		s.addCreador(new Persona("Damon",    "Lindelof"));
-		s.addCreador(new Persona("Jeffrey",  "Lieber"));
-		s.addActor(new Persona("Matthew",    "Fox"));
-		s.addActor(new Persona("Evangeline", "Lilly"));
-		s.addActor(new Persona("Josh",       "Holloway"));
-		s.addActor(new Persona("Terry",      "O'Quinn"));
+				"Los supervivientes de un accidente aéreo quedan varados en una misteriosa "
+						+ "isla del Pacífico llena de secretos.",
+				CategoriaSerie.GOLD);
+		s.addCreador(new Persona("J.J.",   "Abrams"));
+		s.addCreador(new Persona("Damon",  "Lindelof"));
+		s.addCreador(new Persona("Jeffrey","Lieber"));
+		s.addActor(new Persona("Matthew",  "Fox"));
+		s.addActor(new Persona("Evangeline","Lilly"));
+		s.addActor(new Persona("Josh",     "Holloway"));
+		s.addActor(new Persona("Terry",    "O'Quinn"));
 
 		Temporada t1 = new Temporada(1);
-		t1.addCapitulo(new Capitulo(1, "Pilot, Part 1",
-				"El vuelo 815 se estrella en una isla aparentemente desierta."));
-		t1.addCapitulo(new Capitulo(2, "Pilot, Part 2",
-				"Los supervivientes oyen extraños ruidos en la jungla."));
+		t1.addCapitulo(new Capitulo(1, "Pilot (Part 1)",
+				"Los supervivientes se despiertan en la selva tras el accidente."));
+		t1.addCapitulo(new Capitulo(2, "Pilot (Part 2)",
+				"Un grupo explora la selva en busca del transmisor del avión."));
 		t1.addCapitulo(new Capitulo(3, "Tabula Rasa",
-				"Se descubre el oscuro pasado de Kate."));
+				"Jack descubre el pasado de Kate mientras cuidan al piloto herido."));
 		t1.addCapitulo(new Capitulo(4, "Walkabout",
-				"Locke organiza una partida de caza en la isla."));
+				"Locke descubre una sorprendente capacidad que la isla le ha otorgado."));
 		t1.addCapitulo(new Capitulo(5, "White Rabbit",
-				"Jack persigue una visión de su padre por la jungla."));
+				"Jack persigue visiones de su padre fallecido por la jungla."));
 		s.addTemporada(t1);
 
 		Temporada t2 = new Temporada(2);
 		t2.addCapitulo(new Capitulo(1, "Man of Science, Man of Faith",
-				"El interior de la escotilla revela un nuevo misterio."));
+				"Jack baja a la escotilla y encuentra lo que hay dentro."));
 		t2.addCapitulo(new Capitulo(2, "Adrift",
 				"Michael y Sawyer luchan por sobrevivir en el océano."));
 		t2.addCapitulo(new Capitulo(3, "Orientation",
-				"Los supervivientes descubren un viejo vídeo en la escotilla."));
+				"Locke y Jack aprenden el propósito de la escotilla."));
 		s.addTemporada(t2);
 
 		sr.save(s);
@@ -395,89 +321,70 @@ public class AppFeeder implements CommandLineRunner {
 
 	private void feedLaCasaDePapel() {
 		Serie s = new Serie("La Casa de Papel",
-				"Un grupo de atracadores liderados por El Profesor planea el mayor "
-						+ "atraco de la historia: asaltar la Fábrica Nacional de Moneda y Timbre.",
-				CategoriaSerie.ESTANDAR);
-		s.addCreador(new Persona("Álex", "Pina"));
-		s.addActor(new Persona("Úrsula", "Corberó"));
+				"Un misterioso profesor recluta a ocho ladrones para ejecutar el atraco "
+						+ "perfecto a la Fábrica Nacional de Moneda y Timbre.",
+				CategoriaSerie.SILVER);
+		s.addCreador(new Persona("Álex",  "Pina"));
 		s.addActor(new Persona("Álvaro", "Morte"));
-		s.addActor(new Persona("Pedro",  "Alonso"));
-		s.addActor(new Persona("Itziar", "Ituño"));
-		s.addActor(new Persona("Miguel", "Herrán"));
+		s.addActor(new Persona("Úrsula", "Corberó"));
+		s.addActor(new Persona("Itziar",  "Ituño"));
+		s.addActor(new Persona("Pedro",   "Alonso"));
 
 		Temporada t1 = new Temporada(1);
-		t1.addCapitulo(new Capitulo(1, "Efectuar lo acordado",
-				"El Profesor reúne a su banda en una casa apartada."));
-		t1.addCapitulo(new Capitulo(2, "Imprudentes decisiones",
-				"El asalto comienza pero hay imprevistos."));
-		t1.addCapitulo(new Capitulo(3, "Erre que erre",
-				"La policía rodea la fábrica."));
-		t1.addCapitulo(new Capitulo(4, "Un descalabro en el plan",
-				"Tokio se enfrenta a un dilema personal."));
+		t1.addCapitulo(new Capitulo(1, "Efectúen el cambio de vías",
+				"El Profesor explica el plan maestro a su equipo de ladrones."));
+		t1.addCapitulo(new Capitulo(2, "Cásate conmigo",
+				"Dentro de la Fábrica, los rehenes son controlados con dificultad."));
+		t1.addCapitulo(new Capitulo(3, "El precio de un sueño",
+				"La inspectora Raquel Murillo lidera la negociación exterior."));
+		t1.addCapitulo(new Capitulo(4, "Virtudes y contradicciones",
+				"La tensión aumenta dentro y fuera de la Fábrica."));
 		s.addTemporada(t1);
-
-		Temporada t2 = new Temporada(2);
-		t2.addCapitulo(new Capitulo(1, "Hagamos enfadar al enemigo",
-				"La banda planea su próximo movimiento."));
-		t2.addCapitulo(new Capitulo(2, "Rastreo, persecución, perdición y pasta",
-				"El Profesor mantiene varios frentes abiertos."));
-		s.addTemporada(t2);
 
 		sr.save(s);
 	}
 
 	private void feedLosSerrano() {
 		Serie s = new Serie("Los Serrano",
-				"Comedia familiar sobre la convivencia de dos familias en Madrid tras "
-						+ "la boda de Diego Serrano y Lucía Gómez.",
+				"Las peripecias de una familia madrileña que une a un viudo con hijos "
+						+ "y una viuda con hijas.",
 				CategoriaSerie.ESTANDAR);
-		s.addCreador(new Persona("Daniel", "Écija"));
-		s.addCreador(new Persona("Álex",   "Pina"));
-		s.addActor(new Persona("Antonio",  "Resines"));
-		s.addActor(new Persona("Belén",    "Rueda"));
+		s.addCreador(new Persona("Pau",    "Freixas"));
 		s.addActor(new Persona("Fran",     "Perea"));
-		s.addActor(new Persona("Jesús",    "Bonilla"));
+		s.addActor(new Persona("Belén",    "Rueda"));
+		s.addActor(new Persona("José",     "Sancho"));
 
 		Temporada t1 = new Temporada(1);
-		t1.addCapitulo(new Capitulo(1, "Bienvenidos a Santa Justa",
-				"Diego y Lucía deciden formar una familia conjunta."));
-		t1.addCapitulo(new Capitulo(2, "Reunión de hermanos",
-				"Los Serrano organizan una comida familiar."));
-		t1.addCapitulo(new Capitulo(3, "El primer día de cole",
-				"Curro y Teté empiezan en su nuevo colegio."));
-		t1.addCapitulo(new Capitulo(4, "Vecinos en pie de guerra",
-				"Aparece un nuevo vecino conflictivo en el bloque."));
+		t1.addCapitulo(new Capitulo(1, "El comienzo de una nueva vida",
+				"Diego Serrano y Lucía se conocen y sus familias comienzan a mezclarse."));
+		t1.addCapitulo(new Capitulo(2, "Un vecino muy especial",
+				"La nueva familia Serrano trata de adaptarse a vivir juntos."));
+		t1.addCapitulo(new Capitulo(3, "Curro cambia de bando",
+				"Curro empieza a simpatizar con los Serrano pese a su reticencia inicial."));
 		s.addTemporada(t1);
-
-		Temporada t2 = new Temporada(2);
-		t2.addCapitulo(new Capitulo(1, "Vuelta al cole",
-				"Comienza un nuevo curso para los hermanos."));
-		t2.addCapitulo(new Capitulo(2, "Cumpleaños sorpresa",
-				"Lucía organiza una fiesta inolvidable para Diego."));
-		t2.addCapitulo(new Capitulo(3, "El concierto",
-				"Marcos y Eva se conocen en un concierto."));
-		s.addTemporada(t2);
 
 		sr.save(s);
 	}
 
 	private void feedMrRobot() {
 		Serie s = new Serie("Mr. Robot",
-				"Elliot, un brillante programador con trastornos sociales, es reclutado "
-						+ "por un misterioso anarquista para hackear la corporación más grande del mundo.",
+				"Un ingeniero de ciberseguridad con problemas sociales es reclutado "
+						+ "por un misterioso grupo de hackers.",
 				CategoriaSerie.SILVER);
-		s.addCreador(new Persona("Sam",      "Esmail"));
-		s.addActor(new Persona("Rami",       "Malek"));
-		s.addActor(new Persona("Christian",  "Slater"));
-		s.addActor(new Persona("Portia",     "Doubleday"));
+		s.addCreador(new Persona("Sam",   "Esmail"));
+		s.addActor(new Persona("Rami",    "Malek"));
+		s.addActor(new Persona("Christian","Slater"));
+		s.addActor(new Persona("Portia",  "Doubleday"));
 
 		Temporada t1 = new Temporada(1);
 		t1.addCapitulo(new Capitulo(1, "eps1.0_hellofriend.mov",
-				"Elliot conoce al misterioso Mr. Robot."));
+				"Elliot Alderson es reclutado por el misterioso Mr. Robot."));
 		t1.addCapitulo(new Capitulo(2, "eps1.1_ones-and-zer0es.mpeg",
-				"Elliot debe decidir si unirse a fsociety."));
+				"Elliot considera unirse a fsociety para hackear Evil Corp."));
 		t1.addCapitulo(new Capitulo(3, "eps1.2_d3bug.mkv",
-				"Elliot regresa al trabajo tras su rehabilitación."));
+				"Elliot descubre que su empresa está siendo hackeada."));
+		t1.addCapitulo(new Capitulo(4, "eps1.3_da3m0ns.mp4",
+				"El equipo de fsociety planifica su primer gran golpe."));
 		s.addTemporada(t1);
 
 		sr.save(s);
@@ -485,100 +392,82 @@ public class AppFeeder implements CommandLineRunner {
 
 	private void feedNarcos() {
 		Serie s = new Serie("Narcos",
-				"La historia real del cártel de Medellín y la persecución de Pablo Escobar "
-						+ "por agentes de la DEA y autoridades colombianas.",
+				"La historia del ascenso y caída de Pablo Escobar y el Cartel de Medellín.",
 				CategoriaSerie.GOLD);
-		s.addCreador(new Persona("Chris",   "Brancato"));
-		s.addCreador(new Persona("Carlo",   "Bernard"));
-		s.addCreador(new Persona("Doug",    "Miro"));
-		s.addActor(new Persona("Wagner",    "Moura"));
-		s.addActor(new Persona("Pedro",     "Pascal"));
-		s.addActor(new Persona("Boyd",      "Holbrook"));
+		s.addCreador(new Persona("Chris",  "Brancato"));
+		s.addCreador(new Persona("Carlo",  "Bernard"));
+		s.addCreador(new Persona("Doug",   "Miro"));
+		s.addActor(new Persona("Wagner",   "Moura"));
+		s.addActor(new Persona("Boyd",     "Holbrook"));
+		s.addActor(new Persona("Pedro",    "Pascal"));
 
 		Temporada t1 = new Temporada(1);
-		t1.addCapitulo(new Capitulo(1, "Descenso",
-				"Pablo Escobar inicia su imperio del narcotráfico."));
-		t1.addCapitulo(new Capitulo(2, "El bautizo",
-				"La DEA establece operaciones en Colombia."));
-		t1.addCapitulo(new Capitulo(3, "La gran mentira",
-				"Escobar entra en política para protegerse."));
-		t1.addCapitulo(new Capitulo(4, "El palacio en llamas",
-				"El M-19 toma el Palacio de Justicia."));
+		t1.addCapitulo(new Capitulo(1, "Descenso al infierno",
+				"El agente Murphy llega a Colombia y narra el ascenso de Escobar."));
+		t1.addCapitulo(new Capitulo(2, "La guerra de las drogas",
+				"Escobar expande su red de distribución hacia Estados Unidos."));
+		t1.addCapitulo(new Capitulo(3, "El padrino de Colombia",
+				"Escobar entra en política para blindarse legalmente."));
+		t1.addCapitulo(new Capitulo(4, "Para matar un padrino",
+				"La DEA y la policía colombiana planifican cómo atrapar a Escobar."));
 		s.addTemporada(t1);
-
-		Temporada t2 = new Temporada(2);
-		t2.addCapitulo(new Capitulo(1, "Free at Last",
-				"Escobar escapa de La Catedral."));
-		t2.addCapitulo(new Capitulo(2, "Cambalache",
-				"La cacería de Escobar se intensifica."));
-		s.addTemporada(t2);
 
 		sr.save(s);
 	}
 
 	private void feedPeakyBlinders() {
 		Serie s = new Serie("Peaky Blinders",
-				"En la Birmingham de la posguerra, la familia Shelby dirige una banda "
-						+ "criminal con ambiciones que crecen cada temporada.",
+				"La historia de una familia de gángsters de Birmingham que emerge como "
+						+ "una fuerza criminal dominante tras la Primera Guerra Mundial.",
 				CategoriaSerie.GOLD);
-		s.addCreador(new Persona("Steven",  "Knight"));
-		s.addActor(new Persona("Cillian",   "Murphy"));
-		s.addActor(new Persona("Helen",     "McCrory"));
-		s.addActor(new Persona("Paul",      "Anderson"));
-		s.addActor(new Persona("Tom",       "Hardy"));
+		s.addCreador(new Persona("Steven", "Knight"));
+		s.addActor(new Persona("Cillian", "Murphy"));
+		s.addActor(new Persona("Tom",     "Hardy"));
+		s.addActor(new Persona("Helen",   "McCrory"));
 
 		Temporada t1 = new Temporada(1);
 		t1.addCapitulo(new Capitulo(1, "Episode 1",
-				"Tommy Shelby vuelve de la guerra y reorganiza el negocio familiar."));
+				"Tommy Shelby roba un cargamento de armas y desata la ira del gobierno."));
 		t1.addCapitulo(new Capitulo(2, "Episode 2",
-				"El inspector Campbell llega a Birmingham."));
+				"El inspector Chester Campbell llega a Birmingham para recuperar las armas."));
 		t1.addCapitulo(new Capitulo(3, "Episode 3",
-				"Los Peaky Blinders planean un golpe importante."));
+				"Tommy hace un movimiento audaz para proteger a su familia."));
+		t1.addCapitulo(new Capitulo(4, "Episode 4",
+				"Las tensiones entre los Shelby y la policía llegan a un punto crítico."));
 		s.addTemporada(t1);
-
-		Temporada t2 = new Temporada(2);
-		t2.addCapitulo(new Capitulo(1, "Episode 1",
-				"Tommy expande las operaciones a Londres."));
-		t2.addCapitulo(new Capitulo(2, "Episode 2",
-				"Las apuestas suben con nuevos enemigos."));
-		s.addTemporada(t2);
 
 		sr.save(s);
 	}
 
 	private void feedStrangerThings() {
 		Serie s = new Serie("Stranger Things",
-				"Un grupo de niños en un pueblo de Indiana se enfrenta a fenómenos "
-						+ "sobrenaturales mientras buscan a su amigo desaparecido.",
-				CategoriaSerie.SILVER);
-		s.addCreador(new Persona("Matt",   "Duffer"));
-		s.addCreador(new Persona("Ross",   "Duffer"));
-		s.addActor(new Persona("Millie",   "Bobby Brown"));
-		s.addActor(new Persona("Finn",     "Wolfhard"));
-		s.addActor(new Persona("David",    "Harbour"));
-		s.addActor(new Persona("Winona",   "Ryder"));
-		s.addActor(new Persona("Gaten",    "Matarazzo"));
+				"Un grupo de niños en los años 80 se enfrenta a fuerzas sobrenaturales "
+						+ "y experimentos gubernamentales secretos.",
+				CategoriaSerie.GOLD);
+		s.addCreador(new Persona("Matt",  "Duffer"));
+		s.addCreador(new Persona("Ross",  "Duffer"));
+		s.addActor(new Persona("Millie",  "Bobby Brown"));
+		s.addActor(new Persona("Finn",    "Wolfhard"));
+		s.addActor(new Persona("Winona",  "Ryder"));
 
 		Temporada t1 = new Temporada(1);
-		t1.addCapitulo(new Capitulo(1, "The Vanishing of Will Byers",
-				"Will Byers desaparece misteriosamente camino a casa."));
-		t1.addCapitulo(new Capitulo(2, "The Weirdo on Maple Street",
-				"Mike, Lucas y Dustin encuentran a una niña en el bosque."));
-		t1.addCapitulo(new Capitulo(3, "Holly, Jolly",
-				"Once revela que sabe algo sobre la desaparición de Will."));
-		t1.addCapitulo(new Capitulo(4, "The Body",
-				"La policía encuentra un cuerpo en el lago."));
-		t1.addCapitulo(new Capitulo(5, "The Flea and the Acrobat",
-				"El señor Clarke explica los universos paralelos a los niños."));
+		t1.addCapitulo(new Capitulo(1, "Chapter One: The Vanishing of Will Byers",
+				"Un niño desaparece misteriosamente y sus amigos encuentran a una extraña niña."));
+		t1.addCapitulo(new Capitulo(2, "Chapter Two: The Weirdo on Maple Street",
+				"Los chicos esconden a Eleven mientras la policía busca a Will."));
+		t1.addCapitulo(new Capitulo(3, "Chapter Three: Holly, Jolly",
+				"Joyce recibe mensajes de Will a través de las luces de Navidad."));
+		t1.addCapitulo(new Capitulo(4, "Chapter Four: The Body",
+				"Hopper investiga la muerte de Will mientras los chicos siguen buscando."));
 		s.addTemporada(t1);
 
 		Temporada t2 = new Temporada(2);
-		t2.addCapitulo(new Capitulo(1, "MADMAX",
-				"Una nueva chica llega a Hawkins."));
-		t2.addCapitulo(new Capitulo(2, "Trick or Treat, Freak",
-				"Los chicos celebran Halloween mientras Will tiene visiones."));
-		t2.addCapitulo(new Capitulo(3, "The Pollywog",
-				"Dustin descubre una extraña criatura en su basura."));
+		t2.addCapitulo(new Capitulo(1, "Chapter One: MADMAX",
+				"Will tiene visiones del Upside Down mientras una nueva chica llega al pueblo."));
+		t2.addCapitulo(new Capitulo(2, "Chapter Two: Trick or Treat, Freak",
+				"Eleven lleva semanas escondida en la cabaña de Hopper."));
+		t2.addCapitulo(new Capitulo(3, "Chapter Three: The Pollywog",
+				"Will descubre una extraña criatura en el Upside Down."));
 		s.addTemporada(t2);
 
 		sr.save(s);
@@ -586,14 +475,13 @@ public class AppFeeder implements CommandLineRunner {
 
 	private void feedTheWire() {
 		Serie s = new Serie("The Wire",
-				"Una mirada cruda y realista al tráfico de drogas en Baltimore desde "
-						+ "los puntos de vista de policías, traficantes, políticos y periodistas.",
-				CategoriaSerie.GOLD);
+				"Un retrato complejo y realista del crimen organizado y la policía "
+						+ "en la ciudad de Baltimore.",
+				CategoriaSerie.ESTANDAR);
 		s.addCreador(new Persona("David",  "Simon"));
-		s.addActor(new Persona("Dominic", "West"));
-		s.addActor(new Persona("Idris",   "Elba"));
-		s.addActor(new Persona("Lance",   "Reddick"));
-		s.addActor(new Persona("Wendell", "Pierce"));
+		s.addActor(new Persona("Dominic",  "West"));
+		s.addActor(new Persona("Idris",    "Elba"));
+		s.addActor(new Persona("Lance",    "Reddick"));
 
 		Temporada t1 = new Temporada(1);
 		t1.addCapitulo(new Capitulo(1, "The Target",
@@ -607,45 +495,21 @@ public class AppFeeder implements CommandLineRunner {
 		sr.save(s);
 	}
 
-	/* ============================================================== */
-	/*  USUARIOS                                                       */
-	/* ============================================================== */
-
 	private void feedUsuarios() {
-		Usuario john = new Usuario("john_nieve", "winterfell123",
-				"ES91 2100 0418 4502 0005 1332", TipoTarifa.POR_CAPITULO);
-
-		Usuario dany = new Usuario("daenerys", "dracarys",
-				"ES12 1234 5678 9012 3456 7890", TipoTarifa.PLANA);
-
-		Usuario tyrion = new Usuario("tyrion", "casterlyrock",
-				"ES99 9999 9999 9999 9999 9999", TipoTarifa.POR_CAPITULO);
-
-		Usuario arya = new Usuario("arya_stark", "valarmorghulis",
-				"ES50 5050 5050 5050 5050 5050", TipoTarifa.POR_CAPITULO);
-
-		ur.save(john);
-		ur.save(dany);
-		ur.save(tyrion);
-		ur.save(arya);
-
-		System.out.println("[AppFeeder] " + ur.count() + " usuarios cargados.");
+		ur.save(new Usuario("john_nieve", "winterfell123",
+				"ES91 2100 0418 4502 0005 1332", TipoTarifa.POR_CAPITULO));
+		ur.save(new Usuario("daenerys", "dracarys",
+				"ES12 1234 5678 9012 3456 7890", TipoTarifa.PLANA));
 	}
-
-	/* ============================================================== */
-	/*  ESPACIO PERSONAL Y VISUALIZACIONES                             */
-	/* ============================================================== */
 
 	private void feedVisualizaciones() {
 
-		Usuario john   = ur.findByNombreUsuario("john_nieve").get();
-		Usuario dany   = ur.findByNombreUsuario("daenerys").get();
-		Usuario arya   = ur.findByNombreUsuario("arya_stark").get();
+		Usuario john = ur.findByNombreUsuario("john_nieve").get();
+		Usuario dany = ur.findByNombreUsuario("daenerys").get();
 
 		Serie breakingBad   = sr.findByTituloIgnoreCase("Breaking Bad").get();
 		Serie betterCall    = sr.findByTituloIgnoreCase("Better Call Saul").get();
 		Serie chernobyl     = sr.findByTituloIgnoreCase("Chernobyl").get();
-		Serie dexter        = sr.findByTituloIgnoreCase("Dexter").get();
 		Serie friends       = sr.findByTituloIgnoreCase("Friends").get();
 		Serie juegoTronos   = sr.findByTituloIgnoreCase("Juego de Tronos").get();
 		Serie lost          = sr.findByTituloIgnoreCase("Lost").get();
@@ -655,204 +519,53 @@ public class AppFeeder implements CommandLineRunner {
 		Serie strangerTh    = sr.findByTituloIgnoreCase("Stranger Things").get();
 		Serie peakyBlinders = sr.findByTituloIgnoreCase("Peaky Blinders").get();
 
-		// ============================================================
-		// john_nieve (POR_CAPITULO) — series en los 3 estados
-		// ============================================================
-
-		// PENDIENTE
 		john.agregarSerie(losSerrano);
 		john.agregarSerie(strangerTh);
 		john.agregarSerie(friends);
 		john.agregarSerie(mrRobot);
 
-		// EMPEZADA: Breaking Bad (medio capítulo de la T1)
 		john.agregarSerie(breakingBad);
 		john.visualizarCapitulo(breakingBad, 1, breakingBad.getCapitulo(1, 1).get());
 		john.visualizarCapitulo(breakingBad, 1, breakingBad.getCapitulo(1, 2).get());
 		john.visualizarCapitulo(breakingBad, 1, breakingBad.getCapitulo(1, 3).get());
 
-		// EMPEZADA: Lost (varios capítulos)
 		john.agregarSerie(lost);
 		john.visualizarCapitulo(lost, 1, lost.getCapitulo(1, 1).get());
 		john.visualizarCapitulo(lost, 1, lost.getCapitulo(1, 2).get());
 		john.visualizarCapitulo(lost, 1, lost.getCapitulo(1, 3).get());
 		john.visualizarCapitulo(lost, 1, lost.getCapitulo(1, 4).get());
 
-		// TERMINADA: Chernobyl (todos los capítulos)
 		john.agregarSerie(chernobyl);
 		for (Temporada t : chernobyl.getTemporadas().values())
 			for (Capitulo c : t.getCapitulos().values())
 				john.visualizarCapitulo(chernobyl, t.getNumero(), c);
 
-		// TERMINADA: Juego de Tronos completo (lo cargado en el feeder)
 		john.agregarSerie(juegoTronos);
 		for (Temporada t : juegoTronos.getTemporadas().values())
 			for (Capitulo c : t.getCapitulos().values())
 				john.visualizarCapitulo(juegoTronos, t.getNumero(), c);
 
-		// ============================================================
-		// daenerys (PLANA) — vea lo que vea siempre paga 20 €
-		// ============================================================
 		dany.agregarSerie(breakingBad);
 		dany.agregarSerie(betterCall);
 		dany.agregarSerie(casaPapel);
 		dany.agregarSerie(peakyBlinders);
 		dany.agregarSerie(juegoTronos);
 
-		// Maratón en breaking bad
 		for (Capitulo c : breakingBad.getTemporadas().get(1).getCapitulos().values())
 			dany.visualizarCapitulo(breakingBad, 1, c);
 		for (Capitulo c : breakingBad.getTemporadas().get(2).getCapitulos().values())
 			dany.visualizarCapitulo(breakingBad, 2, c);
 
-		// Better Call Saul
 		dany.visualizarCapitulo(betterCall, 1, betterCall.getCapitulo(1, 1).get());
 		dany.visualizarCapitulo(betterCall, 1, betterCall.getCapitulo(1, 2).get());
 		dany.visualizarCapitulo(betterCall, 1, betterCall.getCapitulo(1, 3).get());
 
-		// Casa de papel
 		dany.visualizarCapitulo(casaPapel, 1, casaPapel.getCapitulo(1, 1).get());
 		dany.visualizarCapitulo(casaPapel, 1, casaPapel.getCapitulo(1, 2).get());
 
-		// Peaky Blinders
 		dany.visualizarCapitulo(peakyBlinders, 1, peakyBlinders.getCapitulo(1, 1).get());
-
-		// ============================================================
-		// arya_stark (POR_CAPITULO) — usuaria casual
-		// ============================================================
-		arya.agregarSerie(dexter);
-		arya.agregarSerie(strangerTh);
-
-		// Empieza Dexter
-		arya.visualizarCapitulo(dexter, 1, dexter.getCapitulo(1, 1).get());
-		arya.visualizarCapitulo(dexter, 1, dexter.getCapitulo(1, 2).get());
-
-		// Y un par de Stranger Things sin orden
-		arya.visualizarCapitulo(strangerTh, 1, strangerTh.getCapitulo(1, 1).get());
-		arya.visualizarCapitulo(strangerTh, 2, strangerTh.getCapitulo(2, 1).get());
 
 		ur.save(john);
 		ur.save(dany);
-		ur.save(arya);
-
-		System.out.println("[AppFeeder] Visualizaciones registradas.");
-	}
-
-	/* ============================================================== */
-	/*  TEST DE REPOSITORIOS                                           */
-	/* ============================================================== */
-
-	private void testRepositorios() {
-
-		SimpleDateFormat dateParser = new SimpleDateFormat("dd-MM-yyyy");
-		Date sample = null;
-		try {
-			sample = dateParser.parse("01-01-2020");
-		} catch (ParseException e) {
-			System.out.println("Crujo parseando fecha");
-			e.printStackTrace();
-		}
-		LocalDate sampleLocal = sample.toInstant()
-				.atZone(ZoneId.systemDefault())
-				.toLocalDate();
-
-		System.out.println("================================");
-		System.out.println("[Test repositorios] Fecha de muestra: " + sampleLocal);
-
-		// ---------- SerieRepository ----------
-		System.out.println("--------------------------------");
-		System.out.println("[SerieRepository]");
-		System.out.println("Total series en catalogo: " + sr.count());
-
-		List<Serie> seriesPorL = sr.findByTituloStartingWithIgnoreCaseOrderByTituloAsc("L");
-		System.out.println("Series que empiezan por 'L' = " + seriesPorL.size());
-		for (Serie s : seriesPorL) {
-			System.out.println("  " + s.getTitulo() + " (" + s.getCategoria() + ")");
-		}
-
-		List<Serie> seriesGold = sr.findByCategoriaOrderByTituloAsc(CategoriaSerie.GOLD);
-		System.out.println("Series GOLD = " + seriesGold.size());
-		for (Serie s : seriesGold) {
-			System.out.println("  " + s.getTitulo() + " (" + s.totalCapitulos() + " caps)");
-		}
-
-		List<Serie> seriesSilver = sr.findByCategoriaOrderByTituloAsc(CategoriaSerie.SILVER);
-		System.out.println("Series SILVER = " + seriesSilver.size());
-		for (Serie s : seriesSilver) {
-			System.out.println("  " + s.getTitulo() + " (" + s.totalCapitulos() + " caps)");
-		}
-
-		List<Serie> seriesEstandar = sr.findByCategoriaOrderByTituloAsc(CategoriaSerie.ESTANDAR);
-		System.out.println("Series ESTANDAR = " + seriesEstandar.size());
-		for (Serie s : seriesEstandar) {
-			System.out.println("  " + s.getTitulo() + " (" + s.totalCapitulos() + " caps)");
-		}
-
-		// ---------- UsuarioRepository ----------
-		System.out.println("--------------------------------");
-		System.out.println("[UsuarioRepository]");
-
-		Usuario john = ur.findByNombreUsuario("john_nieve").orElse(null);
-		if (john != null) {
-			System.out.println("Usuario " + john.getNombreUsuario()
-					+ " (" + john.getTarifa() + ")");
-			System.out.println("  Series en su espacio personal:");
-			for (UsuarioSerie us : john.getSeries().values()) {
-				System.out.println("    " + us.getSerie().getTitulo() + " -> " + us.getEstado());
-			}
-		}
-
-		List<Usuario> usuariosPlana = ur.findByTarifa(TipoTarifa.PLANA);
-		System.out.println("Usuarios con tarifa PLANA = " + usuariosPlana.size());
-		for (Usuario u : usuariosPlana) {
-			System.out.println("  " + u.getNombreUsuario());
-		}
-
-		List<Usuario> usuariosPorCap = ur.findByTarifa(TipoTarifa.POR_CAPITULO);
-		System.out.println("Usuarios con tarifa POR_CAPITULO = " + usuariosPorCap.size());
-		for (Usuario u : usuariosPorCap) {
-			System.out.println("  " + u.getNombreUsuario());
-		}
-
-		// ---------- FacturaRepository ----------
-		System.out.println("--------------------------------");
-		System.out.println("[FacturaRepository]");
-
-		if (john != null) {
-			List<Factura> facturasJohn = fr.findByUsuarioOrderByAnioDescMesDesc(john);
-			System.out.println("Facturas de " + john.getNombreUsuario()
-					+ " = " + facturasJohn.size());
-			for (Factura f : facturasJohn) {
-				System.out.printf("  %d-%02d -> %.2f EUR  (%d lineas)%n",
-						f.getAnio(), f.getMes(),
-						f.calcularImporte(john.getTarifa()),
-						f.getLineas().size());
-				for (LineaFactura lf : f.getLineas()) {
-					System.out.printf("      %s | %s T%dx%02d | %.2f EUR%n",
-							lf.getFechaVisualizacion(),
-							lf.getTituloSerie(),
-							lf.getNumeroTemporada(),
-							lf.getNumeroCapitulo(),
-							lf.getCargo());
-				}
-			}
-		}
-
-		Usuario dany = ur.findByNombreUsuario("daenerys").orElse(null);
-		if (dany != null) {
-			List<Factura> facturasDany = fr.findByUsuarioOrderByAnioDescMesDesc(dany);
-			System.out.println("Facturas de " + dany.getNombreUsuario()
-					+ " = " + facturasDany.size());
-			for (Factura f : facturasDany) {
-				System.out.printf("  %d-%02d -> %.2f EUR  (tarifa PLANA, %d lineas)%n",
-						f.getAnio(), f.getMes(),
-						f.calcularImporte(dany.getTarifa()),
-						f.getLineas().size());
-			}
-		}
-
-		System.out.println("================================");
-		System.out.println("Consola H2 disponible en: http://localhost:8080/h2-console");
-		System.out.println("================================");
 	}
 }

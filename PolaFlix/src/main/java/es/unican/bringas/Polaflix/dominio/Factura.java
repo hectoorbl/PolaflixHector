@@ -25,9 +25,24 @@ public class Factura implements Comparable<Factura> {
     private int mes;
     private int anio;
 
+    /*
+     * Cada visualización de un capítulo genera SIEMPRE una línea de factura,
+     * incluso si ese mismo capítulo ya se había visto antes el mismo día.
+     *
+     * Por eso esta colección es una List y NO un SortedSet/TreeSet: un Set
+     * descartaría como "duplicada" la segunda visualización del mismo capítulo
+     * (mismo día, misma serie, misma temporada y mismo número), porque el
+     * compareTo/equals de LineaFactura las consideraba iguales. Con una List
+     * cada visualización es una fila independiente.
+     *
+     * El orden de presentación lo da @OrderBy a nivel de base de datos, de modo
+     * que las líneas siguen llegando ordenadas por fecha y serie sin depender
+     * del compareTo en memoria.
+     */
     @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true)
     @JoinColumn(name = "factura_id")
-    private SortedSet<LineaFactura> lineas = new TreeSet<>();
+    @OrderBy("fechaVisualizacion ASC, tituloSerie ASC, numeroTemporada ASC, numeroCapitulo ASC")
+    private List<LineaFactura> lineas = new ArrayList<>();
 
     public Factura(@NonNull Usuario usuario, int mes, int anio) {
         if (mes < 1 || mes > 12) throw new IllegalArgumentException("mes en [1,12]");
@@ -51,7 +66,7 @@ public class Factura implements Comparable<Factura> {
         };
     }
 
-    public Set<LineaFactura> getLineas() { return Collections.unmodifiableSortedSet(lineas); }
+    public List<LineaFactura> getLineas() { return Collections.unmodifiableList(lineas); }
 
     @Override
     public boolean equals(Object o) {

@@ -1,33 +1,38 @@
 package es.unican.bringas.Polaflix.dominio.dto;
 
-import com.fasterxml.jackson.annotation.JsonFormat;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import es.unican.bringas.Polaflix.dominio.LineaFactura;
 import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
 
 import java.time.LocalDate;
 
 @Getter
-@Setter
-@NoArgsConstructor
 public class LineaFacturaDTO {
 
-    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd")
-    private LocalDate  fecha;
+    @JsonProperty("fecha")
+    private final LocalDate fecha;
 
-    private String     serie;
-    private int        temporada;
-    private int        capitulo;
-    private double     cargo;
+    @JsonProperty("serie")
+    private final String serie;
 
-    public static LineaFacturaDTO de(LineaFactura lf) {
-        LineaFacturaDTO dto = new LineaFacturaDTO();
-        dto.fecha     = lf.getFechaVisualizacion();
-        dto.serie     = lf.getTituloSerie();
-        dto.temporada = lf.getNumeroTemporada();
-        dto.capitulo  = lf.getNumeroCapitulo();
-        dto.cargo     = lf.getCargo();
-        return dto;
+    @JsonProperty("temporada")
+    private final int temporada;
+
+    @JsonProperty("capitulo")
+    private final int capitulo;
+
+    @JsonProperty("titulo")
+    private final String titulo;
+
+    @JsonProperty("cargo")
+    private final double cargo;
+
+    public LineaFacturaDTO(LineaFactura l) {
+        this.fecha     = l.getFechaVisualizacion();
+        this.serie     = l.getTituloSerie();
+        this.temporada = l.getNumeroTemporada();
+        this.capitulo  = l.getNumeroCapitulo();
+        this.titulo    = l.getTituloCapitulo();
+        this.cargo     = l.getCargo();
     }
 }

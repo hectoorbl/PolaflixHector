@@ -53,13 +53,12 @@ public class Usuario {
         return Optional.ofNullable(series.get(serie));
     }
 
-    public void visualizarCapitulo(@NonNull Serie serie, int numTemporada, @NonNull Capitulo capitulo) {
+    public LineaFactura visualizarCapitulo(@NonNull Serie serie, int numTemporada, @NonNull Capitulo capitulo) {
         if (numTemporada < 1) throw new IllegalArgumentException("numTemporada >= 1");
         agregarSerie(serie);
         LocalDate hoy = LocalDate.now();
-        series.get(serie)
-              .marcarCapituloVisto(numTemporada, capitulo.getNumero(), hoy, serie.totalCapitulos());
-        obtenerOCrearFacturaActual(hoy).añadirLineaFactura(hoy, serie, numTemporada, capitulo);
+        series.get(serie).marcarCapituloVisto(numTemporada, capitulo.getNumero(), hoy);
+        return obtenerOCrearFacturaActual(hoy).añadirLineaFactura(hoy, serie, numTemporada, capitulo);
     }
 
     public Factura agregarFactura(int anio, int mes) {
@@ -83,6 +82,16 @@ public class Usuario {
 
     private Factura obtenerOCrearFacturaActual(LocalDate fecha) {
         return agregarFactura(fecha.getYear(), fecha.getMonthValue());
+    }
+
+    public boolean tieneSerie(@NonNull Serie serie) {
+        return series.containsKey(serie);
+    }
+
+    public List<UsuarioSerie> obtenerSeriesConEstado(@NonNull EstadoSerie estado) {
+        return series.values().stream()
+                .filter(us -> us.getEstado() == estado)
+                .toList();
     }
 
     @Override

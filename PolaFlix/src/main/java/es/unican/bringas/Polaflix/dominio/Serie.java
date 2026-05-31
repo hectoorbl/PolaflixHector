@@ -27,7 +27,6 @@ public class Serie {
     @Enumerated(EnumType.STRING)
     private CategoriaSerie categoria;
 
-    // SortedMap → Hibernate la ordena por la clave (Integer numero) automáticamente.
     @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true)
     @JoinColumn(name = "serie_id")
     @MapKey(name = "numero")
@@ -76,6 +75,27 @@ public class Serie {
 
     public int totalCapitulos() {
         return temporadas.values().stream().mapToInt(Temporada::numCapitulos).sum();
+    }
+
+    public boolean esUltimoCapitulo(int numTemp, int numCap) {
+        if (temporadas.isEmpty()) return false;
+        int ultimaTemp = temporadas.lastKey();
+        if (numTemp != ultimaTemp) return false;
+        Temporada t = temporadas.get(ultimaTemp);
+        return t != null && !t.getCapitulos().isEmpty()
+                && numCap == t.getCapitulos().lastKey();
+    }
+
+    public String inicial() {
+        return titulo.isEmpty() ? "" : String.valueOf(Character.toUpperCase(titulo.charAt(0)));
+    }
+
+    public List<String> nombresCreadores() {
+        return creadores.stream().map(Persona::getNombreCompleto).toList();
+    }
+
+    public List<String> nombresActores() {
+        return actores.stream().map(Persona::getNombreCompleto).toList();
     }
 
     @Override

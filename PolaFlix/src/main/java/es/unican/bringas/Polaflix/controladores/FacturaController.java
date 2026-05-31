@@ -1,12 +1,10 @@
 package es.unican.bringas.Polaflix.controladores;
 
-import es.unican.bringas.Polaflix.dominio.dto.FacturaDTO;
+import es.unican.bringas.Polaflix.dominio.dto.FacturaDetalleDTO;
+import es.unican.bringas.Polaflix.dominio.dto.FacturaResumenDTO;
 import es.unican.bringas.Polaflix.servicios.FacturaService;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
@@ -19,19 +17,22 @@ public class FacturaController {
     public FacturaController(FacturaService facturaService) { this.facturaService = facturaService; }
 
     @GetMapping
-    public ResponseEntity<List<FacturaDTO>> listar(@PathVariable("u") String u) {
-        return facturaService.listar(u);
+    public ResponseEntity<List<FacturaResumenDTO>> listar(@PathVariable("u") String u) {
+        return ResponseEntity.ok(facturaService.listarFacturas(u));
     }
 
     @GetMapping("/actual")
-    public ResponseEntity<FacturaDTO> actual(@PathVariable("u") String u) {
-        return facturaService.actual(u);
+    public ResponseEntity<FacturaDetalleDTO> actual(@PathVariable("u") String u) {
+        return ResponseEntity.ok(facturaService.obtenerFacturaActual(u));
     }
 
     @GetMapping("/{anio}/{mes}")
-    public ResponseEntity<FacturaDTO> detalle(@PathVariable("u") String u,
-                                              @PathVariable("anio") int anio,
-                                              @PathVariable("mes") int mes) {
-        return facturaService.obtener(u, anio, mes);
+    public ResponseEntity<FacturaDetalleDTO> detalle(@PathVariable("u") String u,
+                                                     @PathVariable int anio,
+                                                     @PathVariable int mes) {
+        if (mes < 1 || mes > 12 || anio < 1)
+            return ResponseEntity.badRequest().build();
+
+        return ResponseEntity.ok(facturaService.obtenerFactura(u, anio, mes));
     }
 }

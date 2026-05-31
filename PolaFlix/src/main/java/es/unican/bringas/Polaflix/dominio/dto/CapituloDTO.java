@@ -1,40 +1,29 @@
 package es.unican.bringas.Polaflix.dominio.dto;
 
-import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import es.unican.bringas.Polaflix.dominio.Capitulo;
+import es.unican.bringas.Polaflix.dominio.UsuarioSerie;
 import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
 
-/**
- *  - {@link #de}            → {numero, titulo, descripcion}  (catálogo)
- *  - {@link #conSoloVisto}  → {numero, visto}                (estado de serie del usuario)
- */
 @Getter
-@Setter
-@NoArgsConstructor
-@JsonInclude(JsonInclude.Include.NON_NULL)
 public class CapituloDTO {
 
-    private int     numero;
-    private String  titulo;
-    private String  descripcion;
-    private Boolean visto;
+    @JsonProperty("numero")
+    private final int numero;
 
-    /** Capítulo del catálogo con título y descripción. */
-    public static CapituloDTO de(Capitulo c) {
-        CapituloDTO dto = new CapituloDTO();
-        dto.numero      = c.getNumero();
-        dto.titulo      = c.getTitulo();
-        dto.descripcion = c.getDescripcion();
-        return dto;
-    }
+    @JsonProperty("titulo")
+    private final String titulo;
 
-    /** Capítulo del estado de serie: sólo número y flag de visualización. */
-    public static CapituloDTO conSoloVisto(int numero, boolean visto) {
-        CapituloDTO dto = new CapituloDTO();
-        dto.numero = numero;
-        dto.visto  = visto;
-        return dto;
+    @JsonProperty("descripcion")
+    private final String descripcion;
+
+    @JsonProperty("visto")
+    private final boolean visto;
+
+    public CapituloDTO(Capitulo c, int numTemporada, UsuarioSerie us) {
+        this.numero      = c.getNumero();
+        this.titulo      = c.getTitulo();
+        this.descripcion = c.getDescripcion();
+        this.visto       = us.haVisto(numTemporada, c.getNumero());
     }
 }

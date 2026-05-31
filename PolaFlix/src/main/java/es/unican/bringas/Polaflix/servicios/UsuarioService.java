@@ -2,15 +2,15 @@ package es.unican.bringas.Polaflix.servicios;
 
 import es.unican.bringas.Polaflix.dominio.*;
 import es.unican.bringas.Polaflix.dominio.dto.*;
+import es.unican.bringas.Polaflix.excepciones.ConflictoException;
+import es.unican.bringas.Polaflix.excepciones.CredencialesInvalidasException;
+import es.unican.bringas.Polaflix.excepciones.RecursoNoEncontradoException;
 import es.unican.bringas.Polaflix.repositorios.UsuarioRepository;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDate;
-import java.util.*;
-
+import java.util.Base64;
+import java.util.UUID;
 
 @Service
 @Transactional(readOnly = true)
@@ -24,159 +24,79 @@ public class UsuarioService {
         this.serieService = serieService;
     }
 
-    /* -------------------- AUTH -------------------- */
-
     @Transactional
-    public ResponseEntity<Void> signup(UsuarioDTO req) {
-        if (req == null || req.getNombreUsuario() == null || req.getNombreUsuario().isBlank())
-            return ResponseEntity.badRequest().build();
-
-        if (usuarioRepo.existsByNombreUsuario(req.getNombreUsuario()))
-            return ResponseEntity.status(HttpStatus.CONFLICT).build();
-
-        Usuario u = new Usuario(
-            req.getNombreUsuario(),
-            req.getContrasena() == null ? "" : req.getContrasena(),
-            req.getIban()       == null ? "" : req.getIban(),
-            req.getTipoTarifa() == null ? TipoTarifa.POR_CAPITULO : req.getTipoTarifa()
-        );
-        usuarioRepo.save(u);
-
-        return ResponseEntity.status(HttpStatus.CREATED)
-            .header("Location", "/usuarios/" + u.getNombreUsuario())
-            .build();
+    public void registrarUsuario(String nombreUsuario, String contrasena, String iban, TipoTarifa tarifa) {
+        if (usuarioRepo.existsByNombreUsuario(nombreUsuario))
+            throw new ConflictoException("El nombre de usuario ya existe: " + nombreUsuario);
+        usuarioRepo.save(new Usuario(
+                nombreUsuario,
+                contrasena,
+                iban   == null ? "" : iban,
+                tarifa == null ? TipoTarifa.POR_CAPITULO : tarifa));
     }
 
-    public ResponseEntity<UsuarioDTO> login(UsuarioDTO req) {
-        if (req == null || req.getNombreUsuario() == null || req.getContrasena() == null)
-            return ResponseEntity.badRequest().build();
-
-        Optional<Usuario> opt = usuarioRepo
-            .findByNombreUsuarioAndContrasena(req.getNombreUsuario(), req.getContrasena());
-        if (opt.isEmpty()) return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
-
-        Usuario u = opt.get();
-        String token = Base64.getUrlEncoder().withoutPadding().encodeToString(
-            (u.getNombreUsuario() + ":" + UUID.randomUUID()).getBytes()
-        );
-        return ResponseEntity.ok(UsuarioDTO.loginResponse(u.getNombreUsuario(), token));
+    public String autenticarUsuario(String nombreUsuario, String contrasena) {
+        if (!usuarioRepo.existsByNombreUsuario(nombreUsuario))
+            throw new RecursoNoEncontradoException("Usuario no encontrado: " + nombreUsuario);
+        usuarioRepo.findByNombreUsuarioAndContrasena(nombreUsuario, contrasena)
+                .orElseThrow(() -> new CredencialesInvalidasException("Contraseña incorrecta"));
+        return Base64.getUrlEncoder().withoutPadding()
+                .encodeToString((nombreUsuario + ":" + UUID.randomUUID()).getBytes());
     }
 
-    /* -------------------- ESPACIO PERSONAL -------------------- */
-
-    public ResponseEntity<EspacioPersonalDTO> espacioPersonal(String nombreUsuario) {
-        Optional<Usuario> opt = usuarioRepo.findByNombreUsuarioWithSeries(nombreUsuario);
-        if (opt.isEmpty()) return ResponseEntity.notFound().build();
-
-        List<SerieDTO> pendientes = new ArrayList<>();
-        List<SerieDTO> empezadas  = new ArrayList<>();
-        List<SerieDTO> terminadas = new ArrayList<>();
-
-        for (UsuarioSerie us : opt.get().getSeries().values()) {
-            SerieDTO dto = SerieDTO.resumen(us.getSerie());
-            switch (us.getEstado()) {
-                case PENDIENTE -> pendientes.add(dto);
-                case EMPEZADA  -> empezadas.add(dto);
-                case TERMINADA -> terminadas.add(dto);
-            }
-        }
-        return ResponseEntity.ok(new EspacioPersonalDTO(pendientes, empezadas, terminadas));
+    public EspacioPersonalDTO obtenerEspacioPersonal(String nombreUsuario) {
+        Usuario u = usuarioRepo.findByNombreUsuarioWithSeriesAndCapitulosVistos(nombreUsuario)
+                .orElseThrow(() -> new RecursoNoEncontradoException("Usuario no encontrado: " + nombreUsuario));
+        return new EspacioPersonalDTO(u);
     }
 
     @Transactional
-    public ResponseEntity<Void> agregarSerie(String nombreUsuario, String tituloSerie) {
-        Optional<Usuario> uOpt = usuarioRepo.findByNombreUsuario(nombreUsuario);
-        if (uOpt.isEmpty()) return ResponseEntity.notFound().build();
+    public void agregarSerie(String nombreUsuario, String tituloSerie) {
+        Usuario u = usuarioRepo.findByNombreUsuarioWithSeries(nombreUsuario)
+                .orElseThrow(() -> new RecursoNoEncontradoException("Usuario no encontrado: " + nombreUsuario));
+        Serie s = serieService.buscarSerie(tituloSerie);
 
-        Optional<Serie> sOpt = serieService.buscarPorTitulo(tituloSerie);
-        if (sOpt.isEmpty()) return ResponseEntity.notFound().build();
-
-        Usuario u = uOpt.get();
-        Serie   s = sOpt.get();
-
-        // ⚠️ Antes: u.getSeries().containsKey(s.getTitulo()) — el mapa es Map<Serie, …>,
-        // así que pasarle un String siempre devolvía false. Ahora usamos el helper.
-        if (u.getUsuarioSerie(s).isPresent())
-            return ResponseEntity.noContent().build();
+        if (u.tieneSerie(s))
+            throw new ConflictoException("La serie ya está agregada: " + tituloSerie);
 
         u.agregarSerie(s);
-        return ResponseEntity.status(HttpStatus.CREATED).build();
     }
 
-    public ResponseEntity<SerieDTO> estadoSerie(String nombreUsuario, String tituloSerie) {
-        Optional<Usuario> opt = usuarioRepo.findByNombreUsuarioWithSeriesAndCapitulosVistos(nombreUsuario);
-        if (opt.isEmpty()) return ResponseEntity.notFound().build();
+    public SerieUsuarioDTO obtenerEstadoSerie(String nombreUsuario, String tituloSerie) {
+        Usuario u = usuarioRepo.findByNombreUsuarioWithSeriesAndCapitulosVistos(nombreUsuario)
+                .orElseThrow(() -> new RecursoNoEncontradoException("Usuario no encontrado: " + nombreUsuario));
+        Serie s = serieService.buscarSerie(tituloSerie);
 
-        // Necesitamos primero localizar la Serie por título para poder buscarla
-        // en el Map<Serie, UsuarioSerie> del usuario.
-        Optional<Serie> sOpt = serieService.buscarPorTitulo(tituloSerie);
-        if (sOpt.isEmpty()) return ResponseEntity.notFound().build();
-        Serie serie = sOpt.get();
+        UsuarioSerie us = u.getUsuarioSerie(s)
+                .orElseThrow(() -> new RecursoNoEncontradoException(
+                        "La serie no está en el espacio personal del usuario"));
 
-        Usuario u = opt.get();
-        Optional<UsuarioSerie> usOpt = u.getUsuarioSerie(serie);
-        if (usOpt.isEmpty()) return ResponseEntity.notFound().build();
-        UsuarioSerie us = usOpt.get();
+        s.getTemporadas().values().forEach(t -> t.getCapitulos().size());
 
-        // Forzar carga lazy de temporadas/capítulos dentro de la transacción.
-        serie.getTemporadas().values().forEach(t -> t.getCapitulos().size());
-
-        Set<Long> vistos = new HashSet<>();
-        for (CapituloVisto cv : us.getCapitulosVistos())
-            vistos.add(((long) cv.getNumTemporada()) * 10_000L + cv.getNumCapitulo());
-
-        List<TemporadaDTO> temps = serie.getTemporadas().values().stream()
-            .map(t -> {
-                List<CapituloDTO> caps = t.getCapitulos().values().stream()
-                    .map(c -> CapituloDTO.conSoloVisto(c.getNumero(),
-                        vistos.contains(((long) t.getNumero()) * 10_000L + c.getNumero())))
-                    .toList();
-                return TemporadaDTO.conCapitulos(t.getNumero(), caps);
-            })
-            .toList();
-
-        return ResponseEntity.ok(SerieDTO.conEstado(serie, us.getEstado(), temps));
+        return new SerieUsuarioDTO(s, us);
     }
-
-    /* -------------------- VISUALIZACIÓN -------------------- */
 
     @Transactional
-    public ResponseEntity<LineaFacturaDTO> registrarVisualizacion(
-            String nombreUsuario, String tituloSerie, int numTemporada, int numCapitulo) {
+    public LineaFacturaDTO registrarVisualizacion(String nombreUsuario, String tituloSerie,
+                                                  int numTemporada, int numCapitulo) {
+        Usuario u = usuarioRepo.findByNombreUsuarioWithSeriesAndCapitulosVistos(nombreUsuario)
+                .orElseThrow(() -> new RecursoNoEncontradoException("Usuario no encontrado: " + nombreUsuario));
+        Serie s = serieService.buscarSerie(tituloSerie);
 
-        Optional<Usuario> uOpt = usuarioRepo
-            .findByNombreUsuarioWithSeriesAndCapitulosVistos(nombreUsuario);
-        if (uOpt.isEmpty()) return ResponseEntity.notFound().build();
+        u.getUsuarioSerie(s)
+                .orElseThrow(() -> new RecursoNoEncontradoException(
+                        "La serie no está en el espacio personal del usuario"));
 
-        Optional<Serie> sOpt = serieService.buscarPorTitulo(tituloSerie);
-        if (sOpt.isEmpty()) return ResponseEntity.notFound().build();
+        Capitulo c = s.getCapitulo(numTemporada, numCapitulo)
+                .orElseThrow(() -> new RecursoNoEncontradoException(
+                        "Capítulo no encontrado: T" + numTemporada + "C" + numCapitulo));
 
-        Usuario u     = uOpt.get();
-        Serie   serie = sOpt.get();
-
-        // ⚠️ Antes buscaba por título contra un Map<Serie,…>. Ahora por la Serie.
-        Optional<UsuarioSerie> usOpt = u.getUsuarioSerie(serie);
-        if (usOpt.isEmpty()) return ResponseEntity.notFound().build();
-        UsuarioSerie us = usOpt.get();
-
-        Optional<Capitulo> capOpt = serie.getCapitulo(numTemporada, numCapitulo);
-        if (capOpt.isEmpty()) return ResponseEntity.notFound().build();
-        Capitulo capitulo = capOpt.get();
-
-        boolean yaVisto = us.getCapitulosVistos().stream()
-            .anyMatch(cv -> cv.getNumTemporada() == numTemporada
-                         && cv.getNumCapitulo()  == numCapitulo);
-        if (yaVisto) return ResponseEntity.status(HttpStatus.CONFLICT).build();
-
-        LocalDate hoy = LocalDate.now();
-        us.marcarCapituloVisto(numTemporada, numCapitulo, hoy, serie.totalCapitulos());
-        Factura factura = u.agregarFactura(hoy.getYear(), hoy.getMonthValue());
-        LineaFactura linea = factura.añadirLineaFactura(hoy, serie, numTemporada, capitulo);
-
-        return ResponseEntity.status(HttpStatus.CREATED).body(LineaFacturaDTO.de(linea));
+        LineaFactura linea = u.visualizarCapitulo(s, numTemporada, c);
+        return new LineaFacturaDTO(linea);
     }
 
-    public Optional<Usuario> buscarPorNombre(String nombreUsuario) {
-        return usuarioRepo.findByNombreUsuario(nombreUsuario);
+    public Usuario buscarUsuario(String nombreUsuario) {
+        return usuarioRepo.findByNombreUsuario(nombreUsuario)
+                .orElseThrow(() -> new RecursoNoEncontradoException("Usuario no encontrado: " + nombreUsuario));
     }
 }
