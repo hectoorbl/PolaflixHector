@@ -14,6 +14,9 @@ import java.util.*;
 @NoArgsConstructor
 public class Factura implements Comparable<Factura> {
 
+    // IDENTITY: la clave la genera la columna autoincremental de la BD (H2/MySQL).
+    // Es la opcion mas simple y suficiente para el volumen de la app; no requiere
+    // secuencia ni tabla auxiliar como SEQUENCE o TABLE.
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -26,18 +29,11 @@ public class Factura implements Comparable<Factura> {
     private int anio;
 
     /*
-     * Cada visualización de un capítulo genera SIEMPRE una línea de factura,
-     * incluso si ese mismo capítulo ya se había visto antes el mismo día.
-     *
-     * Por eso esta colección es una List y NO un SortedSet/TreeSet: un Set
-     * descartaría como "duplicada" la segunda visualización del mismo capítulo
-     * (mismo día, misma serie, misma temporada y mismo número), porque el
-     * compareTo/equals de LineaFactura las consideraba iguales. Con una List
-     * cada visualización es una fila independiente.
-     *
-     * El orden de presentación lo da @OrderBy a nivel de base de datos, de modo
-     * que las líneas siguen llegando ordenadas por fecha y serie sin depender
-     * del compareTo en memoria.
+     * Cada visualizacion de un capitulo genera SIEMPRE una linea de factura,
+     * incluso si ese mismo capitulo ya se habia visto antes el mismo dia.
+     * Por eso es una List (bag) y no un Set: un Set descartaria como duplicada
+     * la segunda visualizacion del mismo capitulo. El orden de presentacion lo
+     * da @OrderBy a nivel de BD.
      */
     @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true)
     @JoinColumn(name = "factura_id")
@@ -68,6 +64,7 @@ public class Factura implements Comparable<Factura> {
 
     public List<LineaFactura> getLineas() { return Collections.unmodifiableList(lineas); }
 
+    // Identidad por clave de negocio: una factura por usuario, mes y anio.
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -78,7 +75,7 @@ public class Factura implements Comparable<Factura> {
     @Override
     public int hashCode() { return Objects.hash(usuario, mes, anio); }
 
-    // Orden DESC por (anio, mes): la más reciente queda primero (= first()).
+    // Orden DESC por (anio, mes): la mas reciente queda primero (= first()).
     @Override
     public int compareTo(Factura o) {
         int cmp = Integer.compare(o.anio, this.anio);

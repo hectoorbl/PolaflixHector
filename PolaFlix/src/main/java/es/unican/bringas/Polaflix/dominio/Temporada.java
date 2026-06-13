@@ -16,6 +16,9 @@ import java.util.TreeMap;
 @NoArgsConstructor
 public class Temporada {
 
+    // IDENTITY: la clave la genera la columna autoincremental de la BD (H2/MySQL).
+    // Es la opcion mas simple y suficiente para el volumen de la app; no requiere
+    // secuencia ni tabla auxiliar como SEQUENCE o TABLE.
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -34,7 +37,7 @@ public class Temporada {
 
     public void addCapitulo(@NonNull Capitulo capitulo) {
         if (capitulos.containsKey(capitulo.getNumero()))
-            throw new IllegalArgumentException("Capítulo " + capitulo.getNumero() + " ya existe");
+            throw new IllegalArgumentException("Capitulo " + capitulo.getNumero() + " ya existe");
         capitulos.put(capitulo.getNumero(), capitulo);
     }
 
@@ -44,6 +47,8 @@ public class Temporada {
 
     public int numCapitulos() { return capitulos.size(); }
 
+    // Entidad local del agregado Catalogo: el numero la identifica de forma unica
+    // dentro de su Serie padre (donde se almacena en un SortedMap por numero).
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;

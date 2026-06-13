@@ -8,6 +8,8 @@ import lombok.NonNull;
 import java.time.LocalDate;
 import java.util.Objects;
 
+// Value object (@Embeddable): no tiene identidad propia ni clave, su identidad
+// es por valor. Por eso NO lleva @Id ni @GeneratedValue.
 @Embeddable
 @Getter
 @NoArgsConstructor
@@ -17,6 +19,7 @@ public final class CapituloVisto implements Comparable<CapituloVisto> {
     private int       numCapitulo;
     private LocalDate fechaVisualizacion;
 
+    // Unico punto donde se valida la precondicion (numTemporada/numCapitulo >= 1).
     public CapituloVisto(int numTemporada, int numCapitulo, @NonNull LocalDate fechaVisualizacion) {
         if (numTemporada < 1) throw new IllegalArgumentException("numTemporada >= 1");
         if (numCapitulo  < 1) throw new IllegalArgumentException("numCapitulo >= 1");
@@ -25,6 +28,7 @@ public final class CapituloVisto implements Comparable<CapituloVisto> {
         this.fechaVisualizacion = fechaVisualizacion;
     }
 
+    // Value object: igualdad por valor (los tres campos que lo componen).
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;

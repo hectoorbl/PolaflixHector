@@ -12,8 +12,12 @@ import java.util.Objects;
 @Table(name = "lineas_factura")
 @Getter
 @NoArgsConstructor
-public class LineaFactura implements Comparable<LineaFactura> {
+public class LineaFactura {
 
+    // IDENTITY: la clave la genera la columna autoincremental de la BD (H2/MySQL).
+    // Aqui ademas es necesaria una clave subrogada propia: el contenido puede
+    // repetirse (mismo capitulo visto dos veces el mismo dia = dos lineas), asi
+    // que la identidad NO puede basarse en los datos, solo en el id generado.
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -36,13 +40,9 @@ public class LineaFactura implements Comparable<LineaFactura> {
     }
 
     /*
-     * Identidad por id, NO por contenido.
-     *
-     * Cada visualización es una entidad distinta aunque coincida en fecha,
-     * serie, temporada y capítulo con otra (un usuario puede ver el mismo
-     * capítulo dos veces el mismo día y se cobra dos veces). Si equals/hashCode
-     * se basaran en el contenido, dos visualizaciones idénticas se tratarían
-     * como la misma línea y una se perdería al meterlas en colecciones.
+     * Identidad por id subrogado, NO por contenido. Cada visualizacion es una
+     * entidad distinta aunque coincida en fecha, serie, temporada y capitulo con
+     * otra (re-ver un capitulo el mismo dia genera otra linea de cobro).
      */
     @Override
     public boolean equals(Object o) {
@@ -53,33 +53,8 @@ public class LineaFactura implements Comparable<LineaFactura> {
 
     @Override
     public int hashCode() {
-        // hashCode estable para entidades con id generado (patrón recomendado
-        // por Hibernate): no depende de campos que cambian al persistir.
+        // hashCode estable para entidades con id generado: no depende de campos
+        // que cambian al persistir.
         return getClass().hashCode();
-    }
-
-    /*
-     * Orden natural por fecha, serie, temporada y capítulo, con el id como
-     * desempate final. El desempate por id es lo que evita que dos líneas
-     * idénticas en contenido se consideren "iguales" (compareTo == 0) y se
-     * colapsen si alguien las metiera en un TreeSet/SortedSet.
-     */
-    @Override
-    public int compareTo(LineaFactura o) {
-        int cmp = this.fechaVisualizacion.compareTo(o.fechaVisualizacion);
-        if (cmp != 0) return cmp;
-        cmp = this.tituloSerie.compareToIgnoreCase(o.tituloSerie);
-        if (cmp != 0) return cmp;
-        cmp = Integer.compare(this.numeroTemporada, o.numeroTemporada);
-        if (cmp != 0) return cmp;
-        cmp = Integer.compare(this.numeroCapitulo, o.numeroCapitulo);
-        if (cmp != 0) return cmp;
-
-        // Desempate por id. Las líneas aún no persistidas (id == null) se
-        // ordenan al final, pero sin colapsarse entre sí.
-        if (this.id == null && o.id == null) return 0;
-        if (this.id == null) return 1;
-        if (o.id == null)    return -1;
-        return this.id.compareTo(o.id);
     }
 }

@@ -13,6 +13,9 @@ import java.util.Objects;
 @NoArgsConstructor
 public class Capitulo {
 
+    // IDENTITY: la clave la genera la columna autoincremental de la BD (H2/MySQL).
+    // Es la opcion mas simple y suficiente para el volumen de la app; no requiere
+    // secuencia ni tabla auxiliar como SEQUENCE o TABLE.
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -28,6 +31,8 @@ public class Capitulo {
         this.descripcion = descripcion;
     }
 
+    // Entidad local del agregado Catalogo: el numero lo identifica de forma unica
+    // dentro de su Temporada padre (donde se almacena en un SortedMap por numero).
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;

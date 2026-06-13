@@ -7,6 +7,8 @@ import lombok.NonNull;
 
 import java.util.Objects;
 
+// Value object (@Embeddable): no tiene identidad propia ni clave, su identidad
+// es por valor (nombre + apellido). Por eso NO lleva @Id ni @GeneratedValue.
 @Embeddable
 @Getter
 @NoArgsConstructor
@@ -22,6 +24,8 @@ public class Persona implements Comparable<Persona> {
 
     public String getNombreCompleto() { return nombre + " " + apellido; }
 
+    // Value object: igualdad por valor (nombre + apellido). Asi una misma persona
+    // (p. ej. actor y creador) no se duplica en el sistema.
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
