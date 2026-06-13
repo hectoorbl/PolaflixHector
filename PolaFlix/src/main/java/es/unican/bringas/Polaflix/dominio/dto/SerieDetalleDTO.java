@@ -25,15 +25,11 @@ public class SerieDetalleDTO {
     @JsonProperty("actores")
     private final List<String> actores;
 
-    @JsonProperty("agregada")
-    private final boolean agregada;
-
-    public SerieDetalleDTO(Serie serie, boolean agregada) {
+    public SerieDetalleDTO(Serie serie) {
         this.titulo    = serie.getTitulo();
         this.categoria = serie.getCategoria();
         this.sinopsis  = serie.getSinopsis();
         this.creadores = serie.nombresCreadores();
         this.actores   = serie.nombresActores();
-        this.agregada  = agregada;
     }
 }

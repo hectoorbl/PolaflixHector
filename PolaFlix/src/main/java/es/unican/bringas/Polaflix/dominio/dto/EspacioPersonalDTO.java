@@ -21,13 +21,13 @@ public class EspacioPersonalDTO {
 
     public EspacioPersonalDTO(Usuario u) {
         this.pendientes = u.obtenerSeriesConEstado(EstadoSerie.PENDIENTE).stream()
-                .map(us -> new SerieResumenDTO(us.getSerie(), true))
+                .map(us -> new SerieResumenDTO(us.getSerie()))
                 .toList();
         this.empezadas  = u.obtenerSeriesConEstado(EstadoSerie.EMPEZADA).stream()
                 .map(SerieEmpezadaDTO::new)
                 .toList();
         this.terminadas = u.obtenerSeriesConEstado(EstadoSerie.TERMINADA).stream()
-                .map(us -> new SerieResumenDTO(us.getSerie(), true))
+                .map(us -> new SerieResumenDTO(us.getSerie()))
                 .toList();
     }
 }

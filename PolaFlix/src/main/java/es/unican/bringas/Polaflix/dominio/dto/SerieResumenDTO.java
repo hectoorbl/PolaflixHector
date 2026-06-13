@@ -14,12 +14,8 @@ public class SerieResumenDTO {
     @JsonProperty("categoria")
     private final CategoriaSerie categoria;
 
-    @JsonProperty("agregada")
-    private final boolean agregada;
-
-    public SerieResumenDTO(Serie serie, boolean agregada) {
+    public SerieResumenDTO(Serie serie) {
         this.titulo    = serie.getTitulo();
         this.categoria = serie.getCategoria();
-        this.agregada  = agregada;
     }
 }

@@ -14,16 +14,12 @@ public class SerieBuscadaDTO {
     @JsonProperty("categoria")
     private final CategoriaSerie categoria;
 
-    @JsonProperty("agregada")
-    private final boolean agregada;
-
     @JsonProperty("encontrada")
     private final boolean encontrada;
 
-    public SerieBuscadaDTO(Serie serie, boolean agregada, boolean encontrada) {
+    public SerieBuscadaDTO(Serie serie, boolean encontrada) {
         this.titulo     = serie.getTitulo();
         this.categoria  = serie.getCategoria();
-        this.agregada   = agregada;
         this.encontrada = encontrada;
     }
 }
