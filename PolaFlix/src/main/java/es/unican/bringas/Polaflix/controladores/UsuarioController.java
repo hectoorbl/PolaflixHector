@@ -38,14 +38,14 @@ public class UsuarioController {
     }
 
     @PostMapping("/login")
-    public ResponseEntity<Map<String, String>> login(@RequestBody Map<String, String> body) {
+    public ResponseEntity<Void> login(@RequestBody Map<String, String> body) {
         String usuario = body.get("nombreUsuario");
         String pass    = body.get("contrasena");
         if (usuario == null || usuario.isBlank() || pass == null || pass.isBlank())
             return ResponseEntity.badRequest().build();
 
-        String token = usuarioService.autenticarUsuario(usuario, pass);
-        return ResponseEntity.ok(Map.of("nombreUsuario", usuario, "token", token));
+        usuarioService.autenticarUsuario(usuario, pass);
+        return ResponseEntity.ok().build();
     }
 
     @GetMapping("/usuarios/{u}/series")
@@ -73,9 +73,6 @@ public class UsuarioController {
                                                       @PathVariable("titulo") String titulo,
                                                       @PathVariable("t") int t,
                                                       @PathVariable("c") int c) {
-        if (t < 1 || c < 1)
-            return ResponseEntity.badRequest().build();
-
         LineaFacturaDTO linea = usuarioService.registrarVisualizacion(u, titulo, t, c);
         return ResponseEntity.status(HttpStatus.CREATED).body(linea);
     }

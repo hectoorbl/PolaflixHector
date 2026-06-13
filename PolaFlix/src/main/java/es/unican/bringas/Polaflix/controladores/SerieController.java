@@ -29,11 +29,11 @@ public class SerieController {
             return ResponseEntity.badRequest().body("'inicial' y 'nombre' son excluyentes");
 
         if (nombre != null && !nombre.isBlank()) {
-            List<SerieBuscadaDTO> resultado = serieService.buscarPorNombre(usuario, nombre);
+            List<SerieBuscadaDTO> resultado = serieService.buscarPorNombre(nombre);
             return ResponseEntity.ok(resultado);
         }
 
-        List<SerieResumenDTO> resultado = serieService.listarPorInicial(usuario, inicial);
+        List<SerieResumenDTO> resultado = serieService.listarPorInicial(inicial);
         return ResponseEntity.ok(resultado);
     }
 
@@ -45,6 +45,6 @@ public class SerieController {
         if (usuario.isBlank())
             return ResponseEntity.badRequest().build();
 
-        return ResponseEntity.ok(serieService.obtenerDetalle(titulo, usuario));
+        return ResponseEntity.ok(serieService.obtenerDetalle(titulo));
     }
 }
