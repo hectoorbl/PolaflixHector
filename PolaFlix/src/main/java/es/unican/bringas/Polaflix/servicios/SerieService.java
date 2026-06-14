@@ -33,11 +33,10 @@ public class SerieService {
     }
 
     public List<SerieResumenDTO> buscarPorNombre(String nombre) {
-        Serie encontrada = serieRepo.findByTituloIgnoreCase(nombre.trim())
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Serie no encontrada: " + nombre));
-
-        return serieRepo.findByTituloStartingWithIgnoreCaseOrderByTituloAsc(encontrada.inicial())
-                .stream().map(SerieResumenDTO::new).toList();
+        List<Serie> series = serieRepo.findByTituloContainingIgnoreCaseOrderByTituloAsc(nombre.trim());
+        if (series.isEmpty())
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Ninguna serie coincide con: " + nombre);
+        return series.stream().map(SerieResumenDTO::new).toList();
     }
 
     public SerieDetalleDTO obtenerDetalle(String titulo) {

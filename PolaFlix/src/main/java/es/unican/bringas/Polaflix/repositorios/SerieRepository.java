@@ -14,6 +14,8 @@ public interface SerieRepository extends JpaRepository<Serie, Long> {
 
     List<Serie> findByTituloStartingWithIgnoreCaseOrderByTituloAsc(String inicial);
 
+    List<Serie> findByTituloContainingIgnoreCaseOrderByTituloAsc(String texto);
+
     @Query("""
         SELECT s FROM Serie s
         LEFT JOIN FETCH s.actores

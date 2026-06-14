@@ -86,10 +86,6 @@ public class Serie {
                 && numCap == t.getCapitulos().lastKey();
     }
 
-    public String inicial() {
-        return titulo.isEmpty() ? "" : String.valueOf(Character.toUpperCase(titulo.charAt(0)));
-    }
-
     public List<String> nombresCreadores() {
         return creadores.stream().map(Persona::getNombreCompleto).toList();
     }
