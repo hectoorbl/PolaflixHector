@@ -14,7 +14,7 @@ public class EspacioPersonalDTO {
     private final List<SerieResumenDTO> pendientes;
 
     @JsonProperty("empezadas")
-    private final List<SerieEmpezadaDTO> empezadas;
+    private final List<SerieResumenDTO> empezadas;
 
     @JsonProperty("terminadas")
     private final List<SerieResumenDTO> terminadas;
@@ -24,7 +24,7 @@ public class EspacioPersonalDTO {
                 .map(us -> new SerieResumenDTO(us.getSerie()))
                 .toList();
         this.empezadas  = u.obtenerSeriesConEstado(EstadoSerie.EMPEZADA).stream()
-                .map(SerieEmpezadaDTO::new)
+                .map(us -> new SerieResumenDTO(us.getSerie()))
                 .toList();
         this.terminadas = u.obtenerSeriesConEstado(EstadoSerie.TERMINADA).stream()
                 .map(us -> new SerieResumenDTO(us.getSerie()))

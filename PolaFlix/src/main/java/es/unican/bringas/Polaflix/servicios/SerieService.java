@@ -1,7 +1,6 @@
 package es.unican.bringas.Polaflix.servicios;
 
 import es.unican.bringas.Polaflix.dominio.Serie;
-import es.unican.bringas.Polaflix.dominio.dto.SerieBuscadaDTO;
 import es.unican.bringas.Polaflix.dominio.dto.SerieDetalleDTO;
 import es.unican.bringas.Polaflix.dominio.dto.SerieResumenDTO;
 import es.unican.bringas.Polaflix.repositorios.SerieRepository;
@@ -33,15 +32,12 @@ public class SerieService {
         return series.stream().map(SerieResumenDTO::new).toList();
     }
 
-    public List<SerieBuscadaDTO> buscarPorNombre(String nombre) {
+    public List<SerieResumenDTO> buscarPorNombre(String nombre) {
         Serie encontrada = serieRepo.findByTituloIgnoreCase(nombre.trim())
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Serie no encontrada: " + nombre));
 
-        List<Serie> lista = serieRepo.findByTituloStartingWithIgnoreCaseOrderByTituloAsc(encontrada.inicial());
-
-        return lista.stream()
-                .map(s -> new SerieBuscadaDTO(s, s.getTitulo().equalsIgnoreCase(encontrada.getTitulo())))
-                .toList();
+        return serieRepo.findByTituloStartingWithIgnoreCaseOrderByTituloAsc(encontrada.inicial())
+                .stream().map(SerieResumenDTO::new).toList();
     }
 
     public SerieDetalleDTO obtenerDetalle(String titulo) {

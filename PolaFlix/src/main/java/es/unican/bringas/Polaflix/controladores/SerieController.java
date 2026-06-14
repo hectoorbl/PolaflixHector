@@ -1,6 +1,5 @@
 package es.unican.bringas.Polaflix.controladores;
 
-import es.unican.bringas.Polaflix.dominio.dto.SerieBuscadaDTO;
 import es.unican.bringas.Polaflix.dominio.dto.SerieDetalleDTO;
 import es.unican.bringas.Polaflix.dominio.dto.SerieResumenDTO;
 import es.unican.bringas.Polaflix.servicios.SerieService;
@@ -18,23 +17,20 @@ public class SerieController {
     public SerieController(SerieService serieService) { this.serieService = serieService; }
 
     @GetMapping
-    public ResponseEntity<?> listar(
+    public ResponseEntity<List<SerieResumenDTO>> listar(
             @RequestParam String usuario,
             @RequestParam(required = false) String inicial,
             @RequestParam(required = false) String nombre) {
 
         if (usuario.isBlank())
-            return ResponseEntity.badRequest().body("El parámetro 'usuario' es obligatorio");
+            return ResponseEntity.badRequest().build();
         if (inicial != null && nombre != null)
-            return ResponseEntity.badRequest().body("'inicial' y 'nombre' son excluyentes");
+            return ResponseEntity.badRequest().build();
 
-        if (nombre != null && !nombre.isBlank()) {
-            List<SerieBuscadaDTO> resultado = serieService.buscarPorNombre(nombre);
-            return ResponseEntity.ok(resultado);
-        }
+        if (nombre != null && !nombre.isBlank())
+            return ResponseEntity.ok(serieService.buscarPorNombre(nombre));
 
-        List<SerieResumenDTO> resultado = serieService.listarPorInicial(inicial);
-        return ResponseEntity.ok(resultado);
+        return ResponseEntity.ok(serieService.listarPorInicial(inicial));
     }
 
     @GetMapping("/{titulo}")

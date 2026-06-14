@@ -52,20 +52,10 @@ public class UsuarioSerie {
         }
     }
 
-    public Optional<CapituloVisto> ultimoCapituloVisto() {
-        return capitulosVistos.isEmpty() ? Optional.empty() : Optional.of(capitulosVistos.last());
-    }
-
     public boolean haVisto(int numTemporada, int numCapitulo) {
         return capitulosVistos.stream()
                 .anyMatch(cv -> cv.getNumTemporada() == numTemporada
                              && cv.getNumCapitulo()  == numCapitulo);
-    }
-
-    public Optional<CapituloVisto> capituloMasAvanzadoVisto() {
-        return capitulosVistos.stream()
-                .max(Comparator.comparingInt(CapituloVisto::getNumTemporada)
-                        .thenComparingInt(CapituloVisto::getNumCapitulo));
     }
 
     @Override
