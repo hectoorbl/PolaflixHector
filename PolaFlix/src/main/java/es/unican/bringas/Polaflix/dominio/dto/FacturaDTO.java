@@ -8,7 +8,7 @@ import lombok.Getter;
 import java.util.List;
 
 @Getter
-public class FacturaDetalleDTO {
+public class FacturaDTO {
 
     @JsonProperty("anio")
     private final int anio;
@@ -22,7 +22,7 @@ public class FacturaDetalleDTO {
     @JsonProperty("total")
     private final double total;
 
-    public FacturaDetalleDTO(Factura f, TipoTarifa tarifa) {
+    public FacturaDTO(Factura f, TipoTarifa tarifa) {
         this.anio   = f.getAnio();
         this.mes    = f.getMes();
         this.lineas = f.getLineas().stream().map(LineaFacturaDTO::new).toList();

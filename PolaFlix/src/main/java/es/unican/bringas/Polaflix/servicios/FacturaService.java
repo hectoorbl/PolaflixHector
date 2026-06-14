@@ -2,8 +2,7 @@ package es.unican.bringas.Polaflix.servicios;
 
 import es.unican.bringas.Polaflix.dominio.Factura;
 import es.unican.bringas.Polaflix.dominio.Usuario;
-import es.unican.bringas.Polaflix.dominio.dto.FacturaDetalleDTO;
-import es.unican.bringas.Polaflix.dominio.dto.FacturaResumenDTO;
+import es.unican.bringas.Polaflix.dominio.dto.FacturaDTO;
 import es.unican.bringas.Polaflix.repositorios.FacturaRepository;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -25,21 +24,21 @@ public class FacturaService {
         this.usuarioService = usuarioService;
     }
 
-    public List<FacturaResumenDTO> listarFacturas(String nombreUsuario) {
+    public List<FacturaDTO> listarFacturas(String nombreUsuario) {
         Usuario u = usuarioService.buscarUsuario(nombreUsuario);
         return facturaRepo.findByUsuarioOrderByAnioDescMesDesc(u).stream()
-                .map(f -> new FacturaResumenDTO(f, u.getTarifa()))
+                .map(f -> new FacturaDTO(f, u.getTarifa()))
                 .toList();
     }
 
-    public FacturaDetalleDTO obtenerFactura(String nombreUsuario, int anio, int mes) {
+    public FacturaDTO obtenerFactura(String nombreUsuario, int anio, int mes) {
         Usuario u = usuarioService.buscarUsuario(nombreUsuario);
         Factura f = facturaRepo.findByUsuarioAndMesAndAnioWithLineas(u, mes, anio)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "No existe factura para " + anio + "/" + mes));
-        return new FacturaDetalleDTO(f, u.getTarifa());
+        return new FacturaDTO(f, u.getTarifa());
     }
 
-    public FacturaDetalleDTO obtenerFacturaActual(String nombreUsuario) {
+    public FacturaDTO obtenerFacturaActual(String nombreUsuario) {
         LocalDate hoy = LocalDate.now();
         return obtenerFactura(nombreUsuario, hoy.getYear(), hoy.getMonthValue());
     }
