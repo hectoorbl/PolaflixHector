@@ -18,12 +18,9 @@ public class SerieController {
 
     @GetMapping
     public ResponseEntity<List<SerieResumenDTO>> listar(
-            @RequestParam String usuario,
             @RequestParam(required = false) String inicial,
             @RequestParam(required = false) String nombre) {
 
-        if (usuario.isBlank())
-            return ResponseEntity.badRequest().build();
         if (inicial != null && nombre != null)
             return ResponseEntity.badRequest().build();
 
@@ -35,11 +32,7 @@ public class SerieController {
 
     @GetMapping("/{titulo}")
     public ResponseEntity<SerieDetalleDTO> detalle(
-            @PathVariable String titulo,
-            @RequestParam String usuario) {
-
-        if (usuario.isBlank())
-            return ResponseEntity.badRequest().build();
+            @PathVariable String titulo) {
 
         return ResponseEntity.ok(serieService.obtenerDetalle(titulo));
     }
